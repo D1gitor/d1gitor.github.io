@@ -1,0 +1,2184 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5955487969430118"
+     crossorigin="anonymous"></script>
+     
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Streamer Idle Simulator</title>
+  <meta name="description" content="A clean, modern incremental game about becoming a streaming legend." />
+  <style>
+    :root{
+      --bg1:#0b1020;
+      --bg2:#090b16;
+      --card:#0f1733cc;
+      --card2:#0f1733aa;
+      --text:#eaf0ff;
+      --muted:#a8b3d6;
+      --line:#26335f;
+      --good:#7CFFB2;
+      --warn:#FFDE7C;
+      --bad:#FF7C9C;
+      --accent:#7aa7ff;
+      --accent2:#a97cff;
+      --shadow: 0 18px 50px rgba(0,0,0,.35);
+      --radius: 18px;
+    }
+
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      color:var(--text);
+      min-height:100vh;
+      background:
+        radial-gradient(900px 500px at 20% 10%, rgba(122,167,255,.22), transparent 60%),
+        radial-gradient(900px 500px at 80% 20%, rgba(169,124,255,.18), transparent 60%),
+        radial-gradient(700px 450px at 50% 85%, rgba(124,255,178,.10), transparent 60%),
+        linear-gradient(180deg, var(--bg1), var(--bg2));
+    }
+
+    .wrap{
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 22px 18px 40px;
+    }
+
+    header{
+      display:flex;
+      gap:14px;
+      align-items:center;
+      justify-content:space-between;
+      flex-wrap:wrap;
+      margin-bottom:16px;
+    }
+
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:12px;
+    }
+    .logo{
+      width:42px;
+      height:42px;
+      border-radius: 14px;
+      background:
+        radial-gradient(circle at 30% 30%, rgba(255,255,255,.22), transparent 55%),
+        linear-gradient(135deg, var(--accent), var(--accent2));
+      box-shadow: 0 14px 30px rgba(122,167,255,.18);
+      border:1px solid rgba(255,255,255,.10);
+    }
+    h1{
+      font-size:18px;
+      margin:0;
+      letter-spacing:.2px;
+    }
+    .sub{
+      margin:2px 0 0;
+      color:var(--muted);
+      font-size:12px;
+    }
+
+    .top-actions{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      flex-wrap:wrap;
+    }
+
+    button{
+      border:0;
+      cursor:pointer;
+      color:var(--text);
+      font-weight:650;
+      letter-spacing:.2px;
+      background: rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.12);
+      border-radius: 14px;
+      padding: 10px 12px;
+      transition: transform .05s ease, background .2s ease, border .2s ease, opacity .2s ease;
+      box-shadow: 0 10px 20px rgba(0,0,0,.18);
+    }
+    button:hover{ background: rgba(255,255,255,.10); border-color: rgba(255,255,255,.18); }
+    button:active{ transform: translateY(1px); }
+    button:disabled{ opacity:.55; cursor:not-allowed; }
+
+    .btn-primary{
+      background: linear-gradient(135deg, rgba(122,167,255,.95), rgba(169,124,255,.90));
+      border: 1px solid rgba(255,255,255,.18);
+    }
+    .btn-primary:hover{ filter: brightness(1.02); }
+
+    .btn-good{
+      background: linear-gradient(135deg, rgba(124,255,178,.20), rgba(122,167,255,.15));
+      border: 1px solid rgba(124,255,178,.25);
+    }
+    .btn-bad{
+      background: linear-gradient(135deg, rgba(255,124,156,.18), rgba(255,222,124,.08));
+      border: 1px solid rgba(255,124,156,.22);
+    }
+
+    .grid{
+      display:grid;
+      gap:14px;
+      grid-template-columns: 1.2fr .9fr;
+      align-items:start;
+    }
+    @media (max-width: 900px){
+      .grid{ grid-template-columns: 1fr; }
+    }
+
+    .card{
+      background: linear-gradient(180deg, var(--card), var(--card2));
+      border:1px solid rgba(255,255,255,.10);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 14px;
+      overflow:hidden;
+      position:relative;
+    }
+    .card:before{
+      content:"";
+      position:absolute;
+      inset:-1px;
+      background: radial-gradient(600px 180px at 30% 0%, rgba(122,167,255,.12), transparent 60%);
+      pointer-events:none;
+    }
+
+    .section-title{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      margin-bottom:10px;
+    }
+    .section-title h2{
+      margin:0;
+      font-size:14px;
+      color:var(--text);
+      letter-spacing:.3px;
+    }
+    .pill{
+      font-size:12px;
+      color:var(--muted);
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.06);
+      padding: 6px 10px;
+      border-radius: 999px;
+      display:flex;
+      gap:8px;
+      align-items:center;
+      white-space:nowrap;
+    }
+
+    .stats{
+      display:grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap:10px;
+      margin-bottom:10px;
+    }
+    @media (max-width: 520px){
+      .stats{ grid-template-columns: 1fr; }
+    }
+
+    .stat{
+      padding: 12px;
+      border-radius: 16px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(10,16,34,.35);
+      position:relative;
+      overflow:hidden;
+    }
+    .stat .label{ font-size:12px; color:var(--muted); }
+    .stat .value{ font-size:22px; font-weight:800; margin-top:4px; letter-spacing:.2px; }
+    .stat .subline{ font-size:12px; color:var(--muted); margin-top:6px; }
+
+    .big-action{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap:10px;
+      margin-top:8px;
+    }
+
+    .clicker{
+      padding: 14px;
+      border-radius: 18px;
+      border:1px solid rgba(255,255,255,.14);
+      background:
+        radial-gradient(600px 200px at 30% 30%, rgba(255,255,255,.10), transparent 60%),
+        linear-gradient(135deg, rgba(122,167,255,.20), rgba(169,124,255,.14));
+      box-shadow: 0 18px 40px rgba(0,0,0,.25);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:14px;
+    }
+    .clicker .left{
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+    }
+    .clicker .title{ font-weight:850; font-size:15px; }
+    .clicker .desc{ color:var(--muted); font-size:12px; line-height:1.25; }
+    .clicker .right{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+
+    .shop{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+    .shop-item{
+      padding: 12px;
+      border-radius: 16px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(10,16,34,.35);
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      align-items:center;
+    }
+    .shop-item .meta{
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+      min-width:0;
+    }
+    .shop-item .name{
+      font-weight:850;
+      font-size:13px;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .shop-item .note{
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.25;
+    }
+    .shop-item .right{
+      display:flex;
+      gap:8px;
+      align-items:center;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+    .price{
+      font-size:12px;
+      color:var(--muted);
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.06);
+      padding: 6px 10px;
+      border-radius: 999px;
+      white-space:nowrap;
+    }
+
+    .two-col{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap:14px;
+    }
+
+    .log{
+      max-height: 240px;
+      overflow:auto;
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+      padding-right:4px;
+      white-space:pre-line;
+    }
+    .log .entry{
+      font-size:12px;
+      color:var(--muted);
+      padding: 10px 10px;
+      border-radius: 14px;
+      border:1px solid rgba(255,255,255,.08);
+      background: rgba(10,16,34,.28);
+    }
+    .log .entry strong{ color: var(--text); font-weight:800; }
+
+    .adbox{
+      border-radius: 16px;
+      border:1px dashed rgba(255,255,255,.18);
+      background: rgba(255,255,255,.05);
+      padding: 12px;
+      color: var(--muted);
+      font-size: 12px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+    }
+
+    /* --- Modal (fade + scale) --- */
+    .modal-overlay{
+      position:fixed;
+      inset:0;
+      display:none;
+      place-items:center;
+      padding:16px;
+      background:rgba(0,0,0,.55);
+      z-index:70;
+      opacity:0;
+      transition: opacity .18s ease;
+    }
+    .modal-overlay.show{ display:grid; }
+    .modal-overlay.open{ opacity:1; }
+
+    .modal-card{
+      width:min(680px, calc(100vw - 24px));
+      border-radius:22px;
+      padding:16px;
+      border:1px solid rgba(255,255,255,.12);
+      background:rgba(15,23,51,.92);
+      box-shadow:0 18px 50px rgba(0,0,0,.45);
+      position:relative;
+      transform: translateY(8px) scale(.98);
+      opacity:0;
+      transition: transform .18s ease, opacity .18s ease;
+    }
+    .modal-overlay.open .modal-card{
+      transform: translateY(0) scale(1);
+      opacity:1;
+    }
+
+    .toast{
+      position: fixed;
+      left: 50%;
+      bottom: 18px;
+      transform: translateX(-50%);
+      background: rgba(15,23,51,.92);
+      border:1px solid rgba(255,255,255,.12);
+      border-radius: 999px;
+      padding: 10px 14px;
+      box-shadow: 0 16px 40px rgba(0,0,0,.35);
+      color: var(--text);
+      font-size: 13px;
+      display:none;
+      gap:8px;
+      align-items:center;
+      max-width: min(760px, calc(100vw - 20px));
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      z-index: 50;
+    }
+    .toast.show{ display:flex; }
+
+    /* Event toast */
+    #eventToast.show{ display:flex !important; }
+
+    a{ color: var(--accent); text-decoration:none; }
+    a:hover{ text-decoration:underline; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="brand">
+        <div class="logo" aria-hidden="true"></div>
+        <div>
+          <h1 id="uiTitle">Streamer Idle Simulator</h1>
+          <div class="sub" id="uiSubtitle">Click your way to legend status. Upgrade your setup. Farm views while offline.</div>
+        </div>
+      </div>
+
+      <div class="top-actions">
+        <button id="btnPrestige">✨ Prestige</button>
+        <button id="btnDaily">🎁 Daily</button>
+        <button id="btnLB">🏆 Leaderboard</button>
+        <button id="btnSeason">📅 Season</button>
+        <button id="btnHelp">Help</button>
+        <button id="btnSave">Save</button>
+        <button id="btnReset" class="btn-bad">Reset</button>
+      </div>
+    </header>
+
+    <div class="grid">
+      <!-- LEFT -->
+      <div class="card">
+        <div class="section-title">
+          <h2>Status</h2>
+          <div class="pill" id="pillRate">0 /s</div>
+        </div>
+
+        <div class="stats">
+          <div class="stat">
+            <div class="label">Views</div>
+            <div class="value" id="views">0</div>
+            <div class="subline" id="vps">+0 per second</div>
+          </div>
+          <div class="stat">
+            <div class="label">Subs</div>
+            <div class="value" id="subs">0</div>
+            <div class="subline" id="sps">+0 per second</div>
+          </div>
+          <div class="stat">
+            <div class="label">Money</div>
+            <div class="value" id="money">0</div>
+            <div class="subline" id="mps">+0 per second</div>
+          </div>
+        </div>
+
+        <div class="clicker">
+          <div class="left">
+            <div class="title">Go live 🎥</div>
+            <div class="desc">Click for a burst of views. (Imagine chat spamming “W”)</div>
+          </div>
+          <div class="right">
+            <button id="btnClick" class="btn-primary">+ Views</button>
+            <div class="pill" id="pillClick">Click: +1</div>
+          </div>
+        </div>
+
+        <div class="big-action">
+          <div class="adbox">
+            <div>
+              <strong>Rewarded boost</strong><br/>
+              Watch an “ad” → <span style="color:var(--good);font-weight:800">x2 income</span> for 30 sec.
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end">
+              <button id="btnReward" class="btn-good">Watch Ad → x2</button>
+              <span class="pill" id="pillBoost">No boost</span>
+            </div>
+          </div>
+
+          <div class="adbox">
+            <div>
+              <strong>Banner ad</strong><br/>
+              Placeholder for MVP. Replace with AdSense when you’re ready.
+            </div>
+            <button id="btnHowAds">Ads go here</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT -->
+      <div class="two-col">
+        <div class="card">
+          <div class="section-title">
+            <h2>Shop</h2>
+            <div class="pill">Upgrade → more per second</div>
+          </div>
+          <div class="shop" id="shop"></div>
+        </div>
+
+        <div class="card">
+          <div class="section-title">
+            <h2>Achievements</h2>
+            <div class="pill" id="pillAch">0 / 8</div>
+          </div>
+          <div class="log" id="achList"></div>
+        </div>
+
+        <div class="card">
+          <div class="section-title">
+            <h2>Log</h2>
+            <div class="pill" id="pillOffline">Offline: 0</div>
+          </div>
+          <div class="log" id="log"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Help modal -->
+  <div id="helpOverlay" style="position:fixed; inset:0; display:none; place-items:center; padding:16px; background:rgba(0,0,0,.55); z-index:60;">
+    <div style="width:min(560px, calc(100vw - 24px)); border-radius:22px; padding:16px; border:1px solid rgba(255,255,255,.12); background:rgba(15,23,51,.92); box-shadow:0 18px 50px rgba(0,0,0,.45); position:relative;">
+      <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px;">
+        <div>
+          <div style="font-weight:900; font-size:16px; letter-spacing:.2px;">Welcome! 🎥</div>
+          <div style="color:rgba(234,240,255,.75); font-size:12px; margin-top:4px; line-height:1.35;">
+            A 20-second guide to get you started.
+          </div>
+        </div>
+        <button id="btnCloseHelp" style="border-radius:14px; padding:8px 10px;">✕</button>
+      </div>
+
+      <div style="margin-top:12px; display:grid; gap:10px;">
+        <div style="border:1px solid rgba(255,255,255,.10); background:rgba(10,16,34,.35); border-radius:18px; padding:12px;">
+          <div style="font-weight:850; font-size:13px;">1) Click <span style="color:var(--accent); font-weight:900;">Go live</span></div>
+          <div style="color:rgba(234,240,255,.70); font-size:12px; margin-top:4px;">You instantly get views, some subs, and some money.</div>
+        </div>
+
+        <div style="border:1px solid rgba(255,255,255,.10); background:rgba(10,16,34,.35); border-radius:18px; padding:12px;">
+          <div style="font-weight:850; font-size:13px;">2) Buy upgrades in the <span style="color:var(--accent); font-weight:900;">Shop</span></div>
+          <div style="color:rgba(234,240,255,.70); font-size:12px; margin-top:4px;">Upgrades → more per second. The goal is to make numbers grow on their own.</div>
+        </div>
+
+        <div style="border:1px solid rgba(255,255,255,.10); background:rgba(10,16,34,.35); border-radius:18px; padding:12px;">
+          <div style="font-weight:850; font-size:13px;">3) Daily Streak + Season 📅</div>
+          <div style="color:rgba(234,240,255,.70); font-size:12px; margin-top:4px;">Claim daily rewards, keep your streak, and compete in weekly leaderboards.</div>
+        </div>
+
+        <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end; margin-top:4px;">
+          <button id="btnHelpPlay" class="btn-primary" style="border-radius:14px; padding:10px 12px;">OK, let’s play</button>
+        </div>
+
+        <div style="color:rgba(234,240,255,.65); font-size:12px; margin-top:6px;">
+          🎁 Starter bonus: +100 views and +10 money
+        </div>
+
+        <div style="color:rgba(234,240,255,.55); font-size:11px; margin-top:2px;">
+          Tip: Space = click (limited). The game autosaves.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ads modal -->
+  <div id="adsOverlay" class="modal-overlay">
+    <div class="modal-card">
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:10px;">
+        <div style="font-weight:900; font-size:16px;">Ads / Monetization</div>
+        <button id="btnCloseAds" class="btn-bad" style="padding:8px 10px;">✕</button>
+      </div>
+
+      <div style="text-align:right; font-size:11px; color:var(--muted); margin-top:8px;">
+        Press ESC to close
+      </div>
+
+      <div style="margin-top:12px; display:grid; gap:10px;">
+        <div style="border:1px solid rgba(255,255,255,.10); background:rgba(10,16,34,.35); border-radius:18px; padding:12px;">
+          <div style="font-weight:850; font-size:13px;">1) Banner-spot (placeholder)</div>
+          <pre style="margin:10px 0 0; padding:10px; border-radius:14px; border:1px solid rgba(255,255,255,.10); background:rgba(0,0,0,.25); overflow:auto; font-size:12px; color:rgba(234,240,255,.85);"><code id="bannerSnippet">&lt;div id="banner-ad"&gt;Banner placeholder&lt;/div&gt;</code></pre>
+          <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:10px;">
+            <button id="btnCopyBanner" class="btn-primary" style="border-radius:14px; padding:10px 12px;">Copy snippet</button>
+          </div>
+        </div>
+
+        <div style="border:1px solid rgba(255,255,255,.10); background:rgba(10,16,34,.35); border-radius:18px; padding:12px;">
+          <div style="font-weight:850; font-size:13px;">2) AdSense (example)</div>
+          <pre style="margin:10px 0 0; padding:10px; border-radius:14px; border:1px solid rgba(255,255,255,.10); background:rgba(0,0,0,.25); overflow:auto; font-size:12px; color:rgba(234,240,255,.85);"><code id="adsenseSnippet">&lt;!-- Paste your real AdSense code here --&gt;</code></pre>
+          <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:10px;">
+            <button id="btnCopyAdsense" class="btn-primary" style="border-radius:14px; padding:10px 12px;">Copy example</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Leaderboard modal -->
+  <div id="lbOverlay" class="modal-overlay">
+    <div class="modal-card">
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:10px;">
+        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+          <div style="font-weight:900; font-size:16px;">🏆 Leaderboard</div>
+          <button id="btnLBAllTime" class="btn-primary" style="padding:7px 10px; border-radius:999px;">All-time</button>
+          <button id="btnLBWeekly" style="padding:7px 10px; border-radius:999px;">Weekly</button>
+        </div>
+        <button id="btnCloseLB" class="btn-bad" style="padding:8px 10px;">✕</button>
+      </div>
+
+      <div style="color:rgba(234,240,255,.70); font-size:12px; line-height:1.35; margin-bottom:12px;">
+        Submit your score to join the leaderboard, or check your rank.
+      </div>
+
+      <div style="display:grid; gap:10px;">
+
+        <!-- Views -->
+        <div style="border:1px solid rgba(255,255,255,.10); background:rgba(10,16,34,.35); border-radius:18px; padding:12px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+            <div>
+              <div style="font-weight:850; font-size:13px;">👀 Views</div>
+              <div style="color:rgba(234,240,255,.65); font-size:12px; margin-top:2px;">
+                Your current score: <span id="lbMyViews">0</span>
+                <div id="lbRankViews" style="color:rgba(234,240,255,.65); font-size:12px; margin-top:4px;"></div>
+              </div>
+            </div>
+            <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;">
+              <button id="btnLBSubmitViews" class="btn-primary" style="border-radius:14px;">Submit score</button>
+              <button id="btnLBMyRankViews" style="border-radius:14px;">Check rank</button>
+              <button id="btnLBTopViews" style="border-radius:14px;">Top 10</button>
+              <button id="btnLBTopViewsWeekly" style="border-radius:14px;">Weekly Top 10</button>
+            </div>
+          </div>
+          <div style="margin-top:10px; display:none;" id="lbTopViewsWrap">
+            <div class="log" style="max-height:160px;" id="lbTopViews"></div>
+          </div>
+        </div>
+
+        <!-- Prestige -->
+        <div style="border:1px solid rgba(255,255,255,.10); background:rgba(10,16,34,.35); border-radius:18px; padding:12px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+            <div>
+              <div style="font-weight:850; font-size:13px;">✨ Prestige</div>
+              <div style="color:rgba(234,240,255,.65); font-size:12px; margin-top:2px;">
+                Your current SP: <span id="lbMyPrestige">0</span>
+                <div id="lbRankPrestige" style="color:rgba(234,240,255,.65); font-size:12px; margin-top:4px;"></div>
+              </div>
+            </div>
+            <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;">
+              <button id="btnLBSubmitPrestige" class="btn-primary" style="border-radius:14px;">Submit score</button>
+              <button id="btnLBMyRankPrestige" style="border-radius:14px;">Check rank</button>
+              <button id="btnLBTopPrestige" style="border-radius:14px;">Top 10</button>
+              <button id="btnLBTopPrestigeWeekly" style="border-radius:14px;">Weekly Top 10</button>
+            </div>
+          </div>
+          <div style="margin-top:10px; display:none;" id="lbTopPrestigeWrap">
+            <div class="log" style="max-height:160px;" id="lbTopPrestige"></div>
+          </div>
+        </div>
+
+        <!-- Speedrun -->
+        <div style="border:1px solid rgba(255,255,255,.10); background:rgba(10,16,34,.35); border-radius:18px; padding:12px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+            <div>
+              <div style="font-weight:850; font-size:13px;">⏱️ Speedrun</div>
+              <div style="color:rgba(234,240,255,.65); font-size:12px; margin-top:2px;">
+                Goal is 1M views. Submit your time when you reach it.
+                <div id="lbRankSpeedrun" style="color:rgba(234,240,255,.65); font-size:12px; margin-top:4px;"></div>
+              </div>
+            </div>
+            <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;">
+              <button id="btnLBSubmitSpeedrun" class="btn-primary" style="border-radius:14px;">Submit score</button>
+              <button id="btnLBMyRankSpeedrun" style="border-radius:14px;">Check rank</button>
+              <button id="btnLBTopSpeedrun" style="border-radius:14px;">Top 10</button>
+              <button id="btnLBTopSpeedrunWeekly" style="border-radius:14px;">Weekly Top 10</button>
+            </div>
+          </div>
+          <div style="margin-top:10px; display:none;" id="lbTopSpeedrunWrap">
+            <div class="log" style="max-height:160px;" id="lbTopSpeedrun"></div>
+          </div>
+        </div>
+      </div>
+
+      <div style="text-align:right; font-size:11px; color:var(--muted); margin-top:10px;">
+        Press ESC to close
+      </div>
+    </div>
+  </div>
+
+  <!-- Season modal -->
+  <div id="seasonOverlay" class="modal-overlay">
+    <div class="modal-card">
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:10px;">
+        <div style="font-weight:900; font-size:16px;">📅 Streamer Era — Season</div>
+        <button id="btnCloseSeason" class="btn-bad" style="padding:8px 10px;">✕</button>
+      </div>
+
+      <div style="display:grid; gap:10px;">
+
+        <!-- Daily streak -->
+        <div style="border:1px solid rgba(255,255,255,.10); background:rgba(10,16,34,.35); border-radius:18px; padding:12px;">
+          <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; align-items:center;">
+            <div>
+              <div style="font-weight:850;">🔥 Daily Streak</div>
+              <div style="color:rgba(234,240,255,.70); font-size:12px; margin-top:2px;" id="seasonDailyText">Streak: 0/7</div>
+              <div style="color:rgba(234,240,255,.60); font-size:12px; margin-top:4px;" id="seasonDailyNext">Next reward: ...</div>
+            </div>
+            <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;">
+              <button id="btnSeasonClaimDaily" class="btn-primary" style="border-radius:14px;">Claim Daily</button>
+            </div>
+          </div>
+
+          <div style="margin-top:10px; color:rgba(234,240,255,.55); font-size:12px;">
+            Missing a day resets streak back to Day 1.
+          </div>
+        </div>
+
+        <!-- Comeback bonus -->
+        <div style="border:1px solid rgba(255,255,255,.10); background:rgba(10,16,34,.35); border-radius:18px; padding:12px;">
+          <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; align-items:center;">
+            <div>
+              <div style="font-weight:850;">🎁 Comeback Bonus</div>
+              <div style="color:rgba(234,240,255,.70); font-size:12px; margin-top:2px;" id="seasonComebackText">No comeback bonus right now.</div>
+              <div style="color:rgba(234,240,255,.60); font-size:12px; margin-top:4px;" id="seasonComebackReward"></div>
+            </div>
+            <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;">
+              <button id="btnSeasonClaimComeback" class="btn-good" style="border-radius:14px;">Claim</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Weekly info -->
+        <div style="border:1px solid rgba(255,255,255,.10); background:rgba(10,16,34,.35); border-radius:18px; padding:12px;">
+          <div style="font-weight:850;">🏁 Weekly Competition</div>
+          <div style="color:rgba(234,240,255,.70); font-size:12px; margin-top:4px;" id="seasonWeekText">
+            Weekly leaderboards reset every Monday (UTC).
+          </div>
+          <div style="color:rgba(234,240,255,.55); font-size:12px; margin-top:6px;">
+            Open Leaderboard → switch to “Weekly” to compete this week.
+          </div>
+        </div>
+
+        <!-- Weekly Winners (Top 3) -->
+        <div style="margin-top:10px; display:flex; justify-content:space-between; align-items:center; gap:10px;">
+          <div style="font-weight:850;">🏆 Weekly Winners (Top 3)</div>
+          <button id="btnSeasonRefreshWinners" style="border-radius:14px;">Refresh</button>
+        </div>
+
+        <div style="color:rgba(234,240,255,.60); font-size:12px; margin-top:6px;" id="seasonWinnersWeek">
+          Current week (starts Monday UTC): —
+        </div>
+
+        <div style="margin-top:10px; display:grid; gap:10px;">
+          <div style="border:1px solid rgba(255,255,255,.10); background:rgba(10,16,34,.35); border-radius:18px; padding:12px;">
+            <div style="font-weight:850; font-size:13px;">👀 Views</div>
+            <div id="seasonWinViews" style="color:rgba(234,240,255,.75); font-size:12px; margin-top:6px;">No entries yet 🙂</div>
+          </div>
+
+          <div style="border:1px solid rgba(255,255,255,.10); background:rgba(10,16,34,.35); border-radius:18px; padding:12px;">
+            <div style="font-weight:850; font-size:13px;">✨ Prestige</div>
+            <div id="seasonWinPrestige" style="color:rgba(234,240,255,.75); font-size:12px; margin-top:6px;">No entries yet 🙂</div>
+          </div>
+
+          <div style="border:1px solid rgba(255,255,255,.10); background:rgba(10,16,34,.35); border-radius:18px; padding:12px;">
+            <div style="font-weight:850; font-size:13px;">⏱️ Speedrun</div>
+            <div id="seasonWinSpeedrun" style="color:rgba(234,240,255,.75); font-size:12px; margin-top:6px;">No entries yet 🙂</div>
+          </div>
+        </div>
+
+        <!-- Weekly History -->
+        <div style="border:1px solid rgba(255,255,255,.10); background:rgba(10,16,34,.35); border-radius:18px; padding:12px;">
+          <div style="font-weight:850;">📚 Weekly History</div>
+          <div style="color:rgba(234,240,255,.55); font-size:12px; margin-top:4px;">
+            Stores the last ~12 weekly snapshots on this device.
+          </div>
+          <div id="weeklyHistoryList" class="log" style="max-height:220px; margin-top:10px;"></div>
+        </div>
+
+      </div>
+
+      <div style="text-align:right; font-size:11px; color:var(--muted); margin-top:10px;">
+        Press ESC to close
+      </div>
+    </div>
+  </div>
+
+  <!-- Event popup -->
+  <div id="eventToast" style="
+    position:fixed; left:50%; top:18px; transform:translateX(-50%);
+    display:none; align-items:flex-start; gap:10px;
+    background: rgba(15,23,51,.92);
+    border:1px solid rgba(255,255,255,.12);
+    border-radius: 18px;
+    padding: 12px 14px;
+    box-shadow: 0 18px 50px rgba(0,0,0,.45);
+    color: var(--text);
+    max-width:min(720px, calc(100vw - 20px));
+    z-index: 80;
+  ">
+    <div style="font-size:18px; line-height:1;">📣</div>
+    <div style="min-width:0">
+      <div id="eventTitle" style="font-weight:900; font-size:13px; margin-bottom:2px;">Event</div>
+      <div id="eventBody" style="color:rgba(234,240,255,.75); font-size:12px; line-height:1.35;">
+        Event text...
+      </div>
+      <div id="eventFooter" style="margin-top:6px; font-size:11px; color:rgba(234,240,255,.55);">
+        Active...
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast">Toast</div>
+
+<script>
+(() => {
+  // ---------- Helpers ----------
+  const $ = (id) => document.getElementById(id);
+  const now = () => Date.now();
+
+  const fmt = (n) => {
+    n = Math.floor(Number(n || 0));
+    if (n < 1000) return String(n);
+    const units = ["K","M","B","T"];
+    let u = -1;
+    let x = n;
+    while (x >= 1000 && u < units.length - 1) { x /= 1000; u++; }
+    const s = (x >= 100 ? x.toFixed(0) : x >= 10 ? x.toFixed(1) : x.toFixed(2));
+    return s.replace(/\.0+$/,"") + units[u];
+  };
+
+  function fmtTime(ms){
+    const s = Math.floor(ms/1000);
+    const mm = String(Math.floor(s/60)).padStart(2,"0");
+    const ss = String(s%60).padStart(2,"0");
+    return `${mm}:${ss}`;
+  }
+
+  function toast(msg){
+    const el = $("toast");
+    if(!el) return;
+    el.textContent = msg;
+    el.classList.add("show");
+    clearTimeout(toast._t);
+    toast._t = setTimeout(()=> el.classList.remove("show"), 2200);
+  }
+
+  function log(msg){
+    const el = $("log");
+    if(!el) return;
+    const div = document.createElement("div");
+    div.className = "entry";
+    div.innerHTML = msg;
+    el.prepend(div);
+    while (el.children.length > 25) el.removeChild(el.lastChild);
+  }
+
+  // ---------- Time helpers (single source of truth) ----------
+  function todayKeyUTC(){
+    const d = new Date();
+    return `${d.getUTCFullYear()}-${d.getUTCMonth()+1}-${d.getUTCDate()}`;
+  }
+  function yesterdayKeyUTC(){
+    const d = new Date();
+    d.setUTCDate(d.getUTCDate() - 1);
+    return `${d.getUTCFullYear()}-${d.getUTCMonth()+1}-${d.getUTCDate()}`;
+  }
+  function isMondayUTC(){
+    return new Date().getUTCDay() === 1;
+  }
+  function weekStartISO_UTC(d = new Date()){
+    // Monday 00:00 UTC
+    const x = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+    const day = x.getUTCDay(); // 0=Sun
+    const diff = (day === 0 ? -6 : 1 - day);
+    x.setUTCDate(x.getUTCDate() + diff);
+    return x.toISOString().slice(0,10); // YYYY-MM-DD
+  }
+  function currentWeekStartUTC(){
+    return weekStartISO_UTC(new Date());
+  }
+
+  // ---------- Storage keys ----------
+  const STORAGE_KEY = "streamer_idle_v1";
+  const HELP_KEY = "streamer_idle_seen_help_v1";
+  const START_BONUS_KEY = "streamer_idle_start_bonus_v1";
+
+  // Prestige
+  const PRESTIGE_KEY = "streamer_idle_prestige_v1";
+  const PRESTIGE_UNLOCK_VIEWS = 50_000;
+
+  // Leaderboard name + cooldown
+  const LB_NAME_KEY = "streamer_idle_lb_name_v1";
+  const LB_COOLDOWN_MS = 30_000;
+  const LB_CD_KEY = "streamer_idle_lb_global_cd";
+  let _lbCdInterval = null;
+
+  // Daily streak (7-day) + comeback
+  const STREAK_KEY = "streamer_idle_daily_streak_v1";     // number
+  const STREAK_LAST_KEY = "streamer_idle_daily_last_v1";  // YYYY-M-D (UTC)
+  const COMEBACK_LAST_SEEN = "streamer_idle_last_seen_v1";
+  const COMEBACK_CLAIM_KEY = "streamer_idle_comeback_claimed_v1";
+
+  // Random events
+  const EVENT_STATE_KEY = "streamer_idle_event_state_v1";
+
+  // Weekly history (local snapshots)
+  const WEEKLY_HISTORY_KEY = "streamer_idle_weekly_history_v1";
+  const WEEKLY_HISTORY_MAX = 12;
+
+  function loadWeeklyHistory(){
+    try{ return JSON.parse(localStorage.getItem(WEEKLY_HISTORY_KEY) || "[]"); }
+    catch{ return []; }
+  }
+  function saveWeeklyHistory(arr){
+    try{
+      localStorage.setItem(WEEKLY_HISTORY_KEY, JSON.stringify(arr.slice(0, WEEKLY_HISTORY_MAX)));
+    }catch{}
+  }
+  function renderWeeklyHistory(){
+    const el = $("weeklyHistoryList");
+    if(!el) return;
+
+    const hist = loadWeeklyHistory();
+    el.innerHTML = "";
+
+    if(hist.length === 0){
+      const empty = document.createElement("div");
+      empty.className = "entry";
+      empty.textContent = "No history yet. Hit Refresh in Weekly Winners to save snapshots 🙂";
+      el.appendChild(empty);
+      return;
+    }
+
+    hist.slice(0, WEEKLY_HISTORY_MAX).forEach(h => {
+      const div = document.createElement("div");
+      div.className = "entry";
+
+      const v1 = h?.winners?.views || "-";
+      const p1 = h?.winners?.prestige || "-";
+      const s1 = h?.winners?.speedrun || "-";
+
+      div.innerHTML =
+        `<strong>Week ${h.week_start}</strong><br/>` +
+        `👀 ${v1}<br/>` +
+        `✨ ${p1}<br/>` +
+        `⏱️ ${s1}` +
+        `<div style="margin-top:6px;color:rgba(234,240,255,.45);font-size:11px;">Saved: ${new Date(h.savedAt).toLocaleString()}</div>`;
+
+      el.appendChild(div);
+    });
+  }
+
+  // ---------- Defaults ----------
+  const DEFAULT = {
+    views: 0,
+    subs: 0,
+    money: 0,
+    clickPower: 1,
+    upgrades: { pc:0, net:0, overlay:0, mods:0, sponsor:0, editor:0 },
+    boostUntil: 0,
+    lastTick: now(),
+    lastSave: now(),
+    achievements: {},
+    runStart: 0,
+
+    // timed event
+    _eventUntil: 0,
+    _eventVMult: 1,
+    _eventSMult: 1,
+    _eventMMult: 1,
+    _eventClickMult: 1,
+    _nextEventAt: 0,
+  };
+
+  // ---------- Load / Save ----------
+  let S = load();
+  window.S = S;
+
+  function load(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(!raw) return structuredClone(DEFAULT);
+      const obj = JSON.parse(raw);
+      const s = structuredClone(DEFAULT);
+      Object.assign(s, obj);
+      s.upgrades = Object.assign(structuredClone(DEFAULT.upgrades), obj.upgrades || {});
+      s.achievements = Object.assign({}, obj.achievements || {});
+      s.lastTick = obj.lastTick || now();
+      return s;
+    }catch{
+      return structuredClone(DEFAULT);
+    }
+  }
+
+  function hardReset(){
+    localStorage.removeItem(STORAGE_KEY);
+    S = structuredClone(DEFAULT);
+    window.S = S;
+    buildShop();
+    buildAchievements();
+    render(true);
+    toast("Reset done.");
+    log("🔁 <strong>Reset</strong> — back to zero. Let’s rebuild.");
+  }
+
+  // ---------- Starter bonus ----------
+  function giveStartBonus(){
+    if (localStorage.getItem(START_BONUS_KEY)) return;
+    S.views += 100;
+    S.money += 10;
+    localStorage.setItem(START_BONUS_KEY, "1");
+    toast("🎁 Starter bonus: +100 views, +10 money!");
+    log("🎁 <strong>Starter bonus</strong> — +100 views, +10 money");
+    render(true);
+  }
+
+  // ---------- Prestige ----------
+  function loadPrestige(){
+    try{
+      return JSON.parse(localStorage.getItem(PRESTIGE_KEY) || '{"sp":0,"totalPrestiges":0}');
+    }catch{
+      return { sp:0, totalPrestiges:0 };
+    }
+  }
+  function savePrestige(p){
+    localStorage.setItem(PRESTIGE_KEY, JSON.stringify(p));
+  }
+  function calcPrestigeGain(){
+    return Math.floor(Math.sqrt((S.views || 0) / 1000));
+  }
+  function prestigeMult(){
+    const p = loadPrestige();
+    return 1 + (p.sp * 0.05);
+  }
+  function canPrestige(){
+    return (S.views || 0) >= PRESTIGE_UNLOCK_VIEWS;
+  }
+  function doPrestige(){
+    if(!canPrestige()){
+      toast(`You need ${fmt(PRESTIGE_UNLOCK_VIEWS)} views to Prestige.`);
+      return;
+    }
+    const gain = calcPrestigeGain();
+    if(gain <= 0){
+      toast("No SP yet. Play a bit more!");
+      return;
+    }
+    const ok = confirm(`Prestige now?\n\nYou get: +${gain} SP\nThis resets views/subs/money and upgrades.`);
+    if(!ok) return;
+
+    const p = loadPrestige();
+    p.sp += gain;
+    p.totalPrestiges += 1;
+    savePrestige(p);
+
+    S.views = 0;
+    S.subs = 0;
+    S.money = 0;
+    S.upgrades = structuredClone(DEFAULT.upgrades);
+    S.boostUntil = 0;
+    delete S._dailyBoostMult;
+
+    toast(`✨ Prestige! +${gain} SP (total ${p.sp})`);
+    log(`✨ <strong>Prestige</strong> — +${gain} SP (total ${p.sp})`);
+    buildShop();
+    render(true);
+  }
+
+  // ---------- Daily Streak + Comeback ----------
+  const STREAK_REWARDS = [
+    { mult: 1.10, time: 5 * 60 * 1000, money: 0 },      // Day 1
+    { mult: 1.15, time: 5 * 60 * 1000, money: 50 },     // Day 2
+    { mult: 1.20, time: 7 * 60 * 1000, money: 150 },    // Day 3
+    { mult: 1.25, time: 7 * 60 * 1000, money: 250 },    // Day 4
+    { mult: 1.30, time: 10 * 60 * 1000, money: 500 },   // Day 5
+    { mult: 1.35, time: 10 * 60 * 1000, money: 750 },   // Day 6
+    { mult: 1.50, time: 12 * 60 * 1000, money: 1500 },  // Day 7
+  ];
+
+  function loadStreak(){
+    const streak = Number(localStorage.getItem(STREAK_KEY) || "0");
+    const last = localStorage.getItem(STREAK_LAST_KEY) || "";
+    return { streak, last };
+  }
+  function setStreak(streak, last){
+    localStorage.setItem(STREAK_KEY, String(streak));
+    localStorage.setItem(STREAK_LAST_KEY, last);
+  }
+  function canClaimDaily(){
+    const { last } = loadStreak();
+    return last !== todayKeyUTC();
+  }
+  function applyBoost(mult, timeMs){
+    S.boostUntil = Math.max(S.boostUntil || 0, now()) + timeMs;
+    S._dailyBoostMult = mult;
+  }
+  function claimDaily(){
+    if(!canClaimDaily()){
+      toast("Daily already claimed today ✅");
+      return;
+    }
+
+    const { streak, last } = loadStreak();
+    const today = todayKeyUTC();
+    const yKey = yesterdayKeyUTC();
+
+    let newStreak = 1;
+    if(last === yKey) newStreak = Math.min(7, streak + 1);
+
+    const reward = STREAK_REWARDS[newStreak - 1];
+    applyBoost(reward.mult, reward.time);
+    if(reward.money) S.money += reward.money;
+
+    setStreak(newStreak, today);
+
+    toast(`🔥 Daily claimed! Streak: ${newStreak}/7`);
+    log(`🔥 <strong>Daily Streak</strong> — Day ${newStreak}/7 (+${Math.round((reward.mult-1)*100)}% for ${Math.round(reward.time/60000)}m${reward.money?`, +${reward.money} money`:``})`);
+    render(true);
+    updateSeasonUI();
+  }
+
+  // comeback rules
+  const COMEBACK_MIN_HOURS = 18;
+  const COMEBACK_MULT = 1.35;
+  const COMEBACK_TIME = 12 * 60 * 1000;
+
+  function msToPretty(ms){
+    const s = Math.floor(ms/1000);
+    const h = Math.floor(s/3600);
+    const m = Math.floor((s%3600)/60);
+    const d = Math.floor(h/24);
+    if(d>0) return `${d}d ${h%24}h`;
+    if(h>0) return `${h}h ${m}m`;
+    return `${m}m`;
+  }
+  function getAwayMs(){
+    const lastSeen = Number(localStorage.getItem(COMEBACK_LAST_SEEN) || "0");
+    if(!lastSeen) return 0;
+    return Math.max(0, now() - lastSeen);
+  }
+  function canClaimComeback(){
+    const awayMs = getAwayMs();
+    const minMs = COMEBACK_MIN_HOURS * 3600 * 1000;
+    const claimedToday = localStorage.getItem(COMEBACK_CLAIM_KEY) === todayKeyUTC();
+    return awayMs >= minMs && !claimedToday;
+  }
+  function claimComeback(){
+    if(!canClaimComeback()){
+      toast("No comeback bonus right now 🙂");
+      return;
+    }
+    applyBoost(COMEBACK_MULT, COMEBACK_TIME);
+    S.money += 500;
+    localStorage.setItem(COMEBACK_CLAIM_KEY, todayKeyUTC());
+    toast("🎁 Comeback bonus claimed!");
+    log(`🎁 <strong>Comeback Bonus</strong> — +35% for 12m, +500 money`);
+    render(true);
+    updateSeasonUI();
+  }
+
+  // ---------- Season modal ----------
+  function openSeasonOverlay(){
+    const o = $("seasonOverlay");
+    if(!o) return;
+    o.classList.add("show");
+    requestAnimationFrame(()=> o.classList.add("open"));
+
+    updateSeasonUI();
+    seasonRefreshWinners();   // ✅ always refresh winners when opening
+    renderWeeklyHistory();    // ✅ show stored snapshots
+    maybeMondayToast();       // ✅ small one-time toast on Mondays
+  }
+  function closeSeasonOverlay(){
+    const o = $("seasonOverlay");
+    if(!o) return;
+    o.classList.remove("open");
+    setTimeout(()=> o.classList.remove("show"), 180);
+  }
+
+  function maybeMondayToast(){
+    if(!isMondayUTC()) return;
+    const key = "streamer_idle_monday_toast_" + currentWeekStartUTC();
+    if(localStorage.getItem(key)) return;
+    localStorage.setItem(key, "1");
+    toast("🏁 New weekly leaderboard started (Monday UTC)!");
+    log(`🏁 <strong>Weekly reset</strong> — A new weekly leaderboard started.`);
+  }
+
+  function updateSeasonUI(){
+    // daily
+    const { streak } = loadStreak();
+    const dailyText = $("seasonDailyText");
+    const dailyNext = $("seasonDailyNext");
+    const dailyBtn  = $("btnSeasonClaimDaily");
+
+    if(dailyText) dailyText.textContent = `Streak: ${streak || 0}/7`;
+    const nextDay = Math.min(7, canClaimDaily() ? (streak||0)+1 : (streak||0));
+    const rw = STREAK_REWARDS[Math.max(0, nextDay-1)];
+    if(dailyNext) dailyNext.textContent = `Reward: +${Math.round((rw.mult-1)*100)}% income for ${Math.round(rw.time/60000)} min${rw.money?` + ${rw.money} money`:``}`;
+    if(dailyBtn){
+      dailyBtn.disabled = !canClaimDaily();
+      dailyBtn.textContent = canClaimDaily() ? "Claim Daily" : "Claimed";
+    }
+
+    // comeback
+    const awayMs = getAwayMs();
+    const cText = $("seasonComebackText");
+    const cReward = $("seasonComebackReward");
+    const cBtn = $("btnSeasonClaimComeback");
+
+    if(canClaimComeback()){
+      if(cText) cText.textContent = `You were away: ${msToPretty(awayMs)} — comeback available!`;
+      if(cReward) cReward.textContent = `Reward: +35% income for 12 min + 500 money`;
+      if(cBtn){ cBtn.disabled = false; cBtn.textContent = "Claim"; }
+    }else{
+      if(cText) cText.textContent = awayMs ? `You were away: ${msToPretty(awayMs)} — no bonus yet.` : "No comeback bonus right now.";
+      if(cReward) cReward.textContent = `Comeback unlocks after ${COMEBACK_MIN_HOURS}h away.`;
+      if(cBtn){ cBtn.disabled = true; cBtn.textContent = "Claim"; }
+    }
+
+    const w = $("seasonWeekText");
+    if(w) w.textContent = "Weekly leaderboards reset every Monday (UTC).";
+  }
+
+  // ---------- Random Events ----------
+  function showEventToast(title, body, footer){
+    const box = $("eventToast");
+    if(!box) return;
+    $("eventTitle").textContent = title;
+    $("eventBody").textContent = body;
+    $("eventFooter").textContent = footer || "";
+    box.classList.add("show");
+    clearTimeout(showEventToast._t);
+    showEventToast._t = setTimeout(()=> box.classList.remove("show"), 5200);
+  }
+
+  function setTimedEvent(mods, ms, title, body){
+    S._eventUntil = now() + ms;
+    S._eventVMult = mods.v ?? 1;
+    S._eventSMult = mods.s ?? 1;
+    S._eventMMult = mods.money ?? 1;
+    S._eventClickMult = mods.click ?? 1;
+
+    const secs = Math.ceil(ms/1000);
+    showEventToast(title, body, `Active for ${secs}s`);
+    log(`📣 <strong>${title}</strong> — ${body} <span style="color:rgba(234,240,255,.55)">(for ${secs}s)</span>`);
+  }
+
+  function clearTimedEventIfEnded(){
+    if(S._eventUntil && now() > S._eventUntil){
+      S._eventUntil = 0;
+      S._eventVMult = 1;
+      S._eventSMult = 1;
+      S._eventMMult = 1;
+      S._eventClickMult = 1;
+    }
+  }
+
+  function getActiveMults(){
+    const t = now();
+    const m = { v:1, s:1, money:1, click:1 };
+    if(S._eventUntil && t < S._eventUntil){
+      m.v *= (S._eventVMult || 1);
+      m.s *= (S._eventSMult || 1);
+      m.money *= (S._eventMMult || 1);
+      m.click *= (S._eventClickMult || 1);
+    }
+    return m;
+  }
+
+  const EVENTS = [
+    () => setTimedEvent({v: 2.2}, 20_000, "Raid Incoming!", "A big streamer raids you. Views go wild!"),
+    () => setTimedEvent({click: 1.6}, 25_000, "Chat Hype!", "Chat spams W. Your clicks are stronger."),
+    () => { S.money += 120; toast("💸 Sponsor Tip: +$120"); log("💸 <strong>Sponsor Tip</strong> — +$120"); },
+    () => setTimedEvent({money: 2.0}, 18_000, "Sponsored Segment", "Money gain is doubled for a bit."),
+    () => { S.views += 3500; toast("🔥 Viral Clip: +3.5K views"); log("🔥 <strong>Viral Clip</strong> — +3.5K views"); },
+
+    () => setTimedEvent({v: 0.7}, 22_000, "Stream Lag", "Dropped frames... views per second reduced."),
+    () => { S.subs = Math.max(0, S.subs - 12); toast("😬 Chat Drama: -12 subs"); log("😬 <strong>Chat Drama</strong> — -12 subs"); },
+    () => setTimedEvent({money: 0.6}, 25_000, "Chargeback Wave", "Refunds hit. Money gain reduced."),
+    () => { S.money = Math.max(0, S.money - 80); toast("🧾 Unexpected Bill: -$80"); log("🧾 <strong>Unexpected Bill</strong> — -$80"); },
+    () => setTimedEvent({s: 1.8, v: 0.85}, 20_000, "Community Night", "More subs, slightly fewer views."),
+  ];
+
+  function scheduleNextEvent(){
+    const min = 2 * 60 * 1000;
+    const max = 6 * 60 * 1000;
+    const nextIn = Math.floor(min + Math.random() * (max - min));
+    S._nextEventAt = now() + nextIn;
+
+    try{
+      localStorage.setItem(EVENT_STATE_KEY, JSON.stringify({ nextAt: S._nextEventAt }));
+    }catch{}
+  }
+
+  function restoreEventSchedule(){
+    try{
+      const raw = localStorage.getItem(EVENT_STATE_KEY);
+      if(!raw) { scheduleNextEvent(); return; }
+      const obj = JSON.parse(raw);
+      if(obj?.nextAt && Number(obj.nextAt) > now()){
+        S._nextEventAt = Number(obj.nextAt);
+      }else{
+        scheduleNextEvent();
+      }
+    }catch{
+      scheduleNextEvent();
+    }
+  }
+
+  function maybeTriggerEvent(){
+    if(!S._nextEventAt) scheduleNextEvent();
+    if(now() < S._nextEventAt) return;
+
+    if(Math.random() < 0.75){
+      const pick = EVENTS[Math.floor(Math.random() * EVENTS.length)];
+      try{ pick(); }catch{}
+    }
+    scheduleNextEvent();
+  }
+
+  // ---------- Leaderboard (All-time + Weekly toggle) ----------
+  const LB_BASE = "https://oqgrbukmdzcdtszxcnqr.supabase.co/functions/v1";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9xZ3JidWttZHpjZHRzenhjbnFyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg2NzUxNTIsImV4cCI6MjA4NDI1MTE1Mn0.WjO-b4GwOCwTSbD-b0Rcvau9vdb2HuBTpuuAIXVm-wc";
+  let LB_WEEKLY_MODE = false; // false=all-time, true=weekly
+
+  async function promptName(){
+    const saved = localStorage.getItem(LB_NAME_KEY) || "";
+    const name = prompt("Name (2-18 chars):", saved);
+    if(!name) return null;
+    const cleaned = name.trim().slice(0,18);
+    if(cleaned.length < 2) return null;
+    localStorage.setItem(LB_NAME_KEY, cleaned);
+    return cleaned;
+  }
+
+  async function lbGet(type){
+    const weekly = LB_WEEKLY_MODE ? "&weekly=1" : "";
+    const res = await fetch(`${LB_BASE}/get-leaderboard?type=${encodeURIComponent(type)}${weekly}`, {
+      headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` }
+    });
+    const json = await res.json();
+    if(!json.ok) throw new Error(json.error || "LB error");
+    return json.data || [];
+  }
+
+  async function lbSubmit(type, payload){
+    const res = await fetch(`${LB_BASE}/submit-score`, {
+      method: "POST",
+      headers: {
+        "Content-Type":"application/json",
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+      },
+      body: JSON.stringify({ type, ...payload }),
+    });
+    const json = await res.json();
+    if(!res.ok || !json.ok) throw new Error(json.error || `HTTP ${res.status}`);
+    return true;
+  }
+
+  async function lbGetRank(type, name){
+    const res = await fetch(`${LB_BASE}/get-rank`, {
+      method: "POST",
+      headers: {
+        "Content-Type":"application/json",
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+      },
+      body: JSON.stringify({ type, name, weekly: LB_WEEKLY_MODE }),
+    });
+    const json = await res.json();
+    if(!res.ok || !json.ok) throw new Error(json.error || `HTTP ${res.status}`);
+    return json;
+  }
+
+  function lbSetCooldown(){
+    localStorage.setItem(LB_CD_KEY, String(now()));
+  }
+  function lbMsLeft(){
+    const raw = localStorage.getItem(LB_CD_KEY);
+    const last = raw ? Number(raw) : 0;
+    return Math.max(0, (last + LB_COOLDOWN_MS) - now());
+  }
+  function lbCanSend(){
+    return lbMsLeft() === 0;
+  }
+  function lbUpdateCooldownUI(){
+    const ids = ["btnLBSubmitViews","btnLBSubmitPrestige","btnLBSubmitSpeedrun"];
+    const left = lbMsLeft();
+    for(const id of ids){
+      const btn = $(id);
+      if(!btn) continue;
+      if(left > 0){
+        const s = Math.ceil(left/1000);
+        btn.disabled = true;
+        btn.textContent = `Wait ${s}s`;
+        btn.title = "You can submit again when cooldown ends.";
+      }else{
+        btn.disabled = false;
+        btn.textContent = "Submit score";
+        btn.title = "";
+      }
+    }
+  }
+  function lbStartCooldownTicker(){
+    lbStopCooldownTicker();
+    lbUpdateCooldownUI();
+    _lbCdInterval = setInterval(lbUpdateCooldownUI, 250);
+  }
+  function lbStopCooldownTicker(){
+    if(_lbCdInterval){
+      clearInterval(_lbCdInterval);
+      _lbCdInterval = null;
+    }
+  }
+
+  function updateLBModeButtons(){
+    const a = $("btnLBAllTime");
+    const w = $("btnLBWeekly");
+    if(!a || !w) return;
+    if(LB_WEEKLY_MODE){
+      w.classList.add("btn-primary");
+      a.classList.remove("btn-primary");
+    }else{
+      a.classList.add("btn-primary");
+      w.classList.remove("btn-primary");
+    }
+  }
+
+  function setRankLine(type, text){
+    const map = { views:"lbRankViews", prestige:"lbRankPrestige", speedrun:"lbRankSpeedrun" };
+    const el = $(map[type]);
+    if(el) el.textContent = text || "";
+  }
+
+  async function showMyRank(type){
+    const name = await promptName();
+    if(!name) return;
+
+    try{
+      const r = await lbGetRank(type, name);
+      if(!r.found){
+        const msg = "No scores found for you yet (submit first) 🙂";
+        setRankLine(type, msg);
+        toast(msg);
+        return;
+      }
+      const msg = `You are #${r.rank} of ${r.total} (name: ${name}) ✅`;
+      setRankLine(type, msg);
+      toast(msg);
+    }catch(err){
+      const msg = String(err?.message || err);
+      setRankLine(type, "Could not fetch rank: " + msg);
+      toast(msg);
+    }
+  }
+
+  function refreshLBMyScores(){
+    const v = $("lbMyViews");
+    if(v) v.textContent = fmt(S.views || 0);
+
+    const p = loadPrestige();
+    const sp = $("lbMyPrestige");
+    if(sp) sp.textContent = fmt(p.sp || 0);
+  }
+
+  function renderTopList(containerId, rows, type){
+    const el = $(containerId);
+    if(!el) return;
+    el.innerHTML = "";
+
+    if(!rows || rows.length === 0){
+      const empty = document.createElement("div");
+      empty.className = "entry";
+      empty.textContent = "No entries yet 🙂";
+      el.appendChild(empty);
+      return;
+    }
+
+    rows.slice(0,10).forEach((r, i) => {
+      const div = document.createElement("div");
+      div.className = "entry";
+
+      if(type === "speedrun"){
+        const t = Number(r.timeMs ?? r.time_ms ?? 0);
+        div.innerHTML = `<strong>#${i+1} ${r.name || "?"}</strong><br/><span style="color:var(--muted)">${fmtTime(t)}</span>`;
+      }else if(type === "prestige"){
+        const s = Number(r.score_int ?? r.score ?? r.value ?? 0);
+        div.innerHTML = `<strong>#${i+1} ${r.name || "?"}</strong><br/><span style="color:var(--muted)">${fmt(s)}</span>`;
+      }else{
+        const s = Number(r.score_bigint ?? r.score ?? r.value ?? 0);
+        div.innerHTML = `<strong>#${i+1} ${r.name || "?"}</strong><br/><span style="color:var(--muted)">${fmt(s)}</span>`;
+      }
+
+      el.appendChild(div);
+    });
+  }
+
+  async function toggleTop(type){
+    const map = {
+      views:    { wrap:"lbTopViewsWrap",    list:"lbTopViews" },
+      prestige: { wrap:"lbTopPrestigeWrap", list:"lbTopPrestige" },
+      speedrun: { wrap:"lbTopSpeedrunWrap", list:"lbTopSpeedrun" },
+    };
+    const m = map[type];
+    if(!m) return;
+
+    const wrap = $(m.wrap);
+    if(!wrap) return;
+
+    const isOpen = wrap.style.display !== "none";
+    if(isOpen){
+      wrap.style.display = "none";
+      return;
+    }
+
+    wrap.style.display = "block";
+    try{
+      const data = await lbGet(type);
+      renderTopList(m.list, data, type);
+    }catch(err){
+      toast(String(err?.message || err));
+    }
+  }
+
+  async function submitViews(){
+    const name = await promptName();
+    if(!name) return;
+    await lbSubmit("views", { name, score: Math.floor(S.views || 0) });
+    toast("Submitted to Views leaderboard ✅");
+  }
+  async function submitPrestige(){
+    const name = await promptName();
+    if(!name) return;
+    const p = loadPrestige();
+    await lbSubmit("prestige", { name, score: Math.floor(p.sp || 0) });
+    toast("Submitted to Prestige leaderboard ✅");
+  }
+  async function submitSpeedrun(){
+    const name = await promptName();
+    if(!name) return;
+    if(!S.runStart){ toast("Start a run first (missing runStart)."); return; }
+    if((S.views||0) < 1_000_000){ toast("You must reach 1M views first!"); return; }
+    const timeMs = now() - S.runStart;
+    await lbSubmit("speedrun", { name, timeMs });
+    toast("Submitted to Speedrun leaderboard ✅");
+  }
+
+  // Track last week you submitted (useful later)
+  const LAST_SUBMIT_WEEK_KEY = "streamer_idle_last_submitted_week_v1";
+  function markSubmittedThisWeek(){
+    localStorage.setItem(LAST_SUBMIT_WEEK_KEY, currentWeekStartUTC());
+  }
+
+  // ---------- Weekly Winners (Top 3) — FIXED (no week_start required) ----------
+  async function lbGetWeeklyTop(type, limit = 3){
+    const res = await fetch(
+      `${LB_BASE}/get-leaderboard?type=${encodeURIComponent(type)}&weekly=1&limit=${limit}`,
+      {
+        headers: {
+          apikey: SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+        }
+      }
+    );
+
+    const json = await res.json();
+    if(!res.ok || !json.ok) throw new Error(json.error || `HTTP ${res.status}`);
+    return json.data || [];
+  }
+
+  function winnersToText(rows, type){
+    if(!rows || rows.length === 0) return "No entries yet 🙂";
+
+    if(type === "speedrun"){
+      return rows.slice(0,3).map((r, i) => {
+        const t = Number(r.time_ms ?? r.timeMs ?? 0);
+        return `#${i+1} ${r.name || "?"} — ${fmtTime(t)}`;
+      }).join("\n");
+    }else if(type === "prestige"){
+      return rows.slice(0,3).map((r, i) => {
+        const s = Number(r.score_int ?? r.score ?? 0);
+        return `#${i+1} ${r.name || "?"} — ${fmt(s)}`;
+      }).join("\n");
+    }else{
+      return rows.slice(0,3).map((r, i) => {
+        const s = Number(r.score_bigint ?? r.score ?? 0);
+        return `#${i+1} ${r.name || "?"} — ${fmt(s)}`;
+      }).join("\n");
+    }
+  }
+
+  function saveWeeklySnapshot(week, vRows, pRows, sRows){
+    const hist = loadWeeklyHistory();
+
+    const best = (rows, type) => {
+      if(!rows || rows.length === 0) return "No entries";
+      const r = rows[0];
+      const name = r?.name || "?";
+      if(type === "speedrun") return `${name} (${fmtTime(Number(r.time_ms ?? r.timeMs ?? 0))})`;
+      if(type === "prestige") return `${name} (${fmt(Number(r.score_int ?? r.score ?? 0))})`;
+      return `${name} (${fmt(Number(r.score_bigint ?? r.score ?? 0))})`;
+    };
+
+    const snapshot = {
+      week_start: week,
+      savedAt: Date.now(),
+      winners: {
+        views: best(vRows, "views"),
+        prestige: best(pRows, "prestige"),
+        speedrun: best(sRows, "speedrun"),
+      }
+    };
+
+    // Keep one snapshot per week (replace older one for same week)
+    const idx = hist.findIndex(x => x.week_start === week);
+    if(idx >= 0) hist.splice(idx, 1);
+    hist.unshift(snapshot);
+    saveWeeklyHistory(hist);
+  }
+
+  async function seasonRefreshWinners(){
+    const week = currentWeekStartUTC();
+
+    const weekLine = $("seasonWinnersWeek");
+    if(weekLine) weekLine.textContent = `Current week (starts Monday UTC): ${week}`;
+
+    const elV = $("seasonWinViews");
+    const elP = $("seasonWinPrestige");
+    const elS = $("seasonWinSpeedrun");
+
+    if(elV) elV.textContent = "Loading...";
+    if(elP) elP.textContent = "Loading...";
+    if(elS) elS.textContent = "Loading...";
+
+    try{
+      const [v, p, s] = await Promise.all([
+        lbGetWeeklyTop("views", 3),
+        lbGetWeeklyTop("prestige", 3),
+        lbGetWeeklyTop("speedrun", 3),
+      ]);
+
+      if(elV) elV.textContent = winnersToText(v, "views");
+      if(elP) elP.textContent = winnersToText(p, "prestige");
+      if(elS) elS.textContent = winnersToText(s, "speedrun");
+
+      // save local snapshot + render history
+      saveWeeklySnapshot(week, v, p, s);
+      renderWeeklyHistory();
+
+    }catch(err){
+      const msg = String(err?.message || err);
+      if(elV) elV.textContent = "Could not load weekly winners: " + msg;
+      if(elP) elP.textContent = "Could not load weekly winners: " + msg;
+      if(elS) elS.textContent = "Could not load weekly winners: " + msg;
+      toast(msg);
+    }
+  }
+
+  // ---------- Game content ----------
+  const UPGRADE_DEFS = [
+    { id:"pc",      name:"Better PC",        desc:"More views per second. (GPU goes BRRR)", baseCost:50,  costMult:1.25, effect:(lvl)=>({ vps: 0.6 * lvl }) },
+    { id:"net",     name:"Faster internet",  desc:"Stable stream → more subs per second.",  baseCost:120, costMult:1.28, effect:(lvl)=>({ sps: 0.06 * lvl }) },
+    { id:"overlay", name:"Pro overlay",      desc:"More click value (chat is impressed).",  baseCost:90,  costMult:1.26, effect:(lvl)=>({ click: 0.4 * lvl }) },
+    { id:"mods",    name:"Chat mods",        desc:"Fewer trolls → more money per second.",  baseCost:220, costMult:1.30, effect:(lvl)=>({ mps: 0.14 * lvl }) },
+    { id:"sponsor", name:"Sponsor deal",     desc:"Subs → money (a bit per second).",       baseCost:500, costMult:1.32, effect:(lvl)=>({ subToMoney: 0.012 * lvl }) },
+    { id:"editor",  name:"Video editor",     desc:"Views → subs (a bit per second).",       baseCost:650, costMult:1.34, effect:(lvl)=>({ viewToSubs: 0.0018 * lvl }) },
+  ];
+
+  const ACH = [
+    { id:"v_1k",   title:"First 1k views",        check:(s)=>s.views>=1000,      reward:"+5% clickPower", apply:(s)=> s.clickPower *= 1.05 },
+    { id:"s_50",   title:"50 subs",               check:(s)=>s.subs>=50,         reward:"+5% money/s",    apply:(s)=> s._permMoneyMult = (s._permMoneyMult||1)*1.05 },
+    { id:"m_1k",   title:"Earn 1K money",         check:(s)=>s.money>=1000,      reward:"+5% views/s",    apply:(s)=> s._permViewMult  = (s._permViewMult||1)*1.05 },
+    { id:"pc_10",  title:"PC lvl 10",             check:(s)=>s.upgrades.pc>=10,  reward:"+10% clickPower",apply:(s)=> s.clickPower *= 1.10 },
+    { id:"net_10", title:"Internet lvl 10",       check:(s)=>s.upgrades.net>=10, reward:"+10% subs/s",    apply:(s)=> s._permSubMult   = (s._permSubMult||1)*1.10 },
+    { id:"mods_10",title:"Mods lvl 10",           check:(s)=>s.upgrades.mods>=10,reward:"+10% money/s",   apply:(s)=> s._permMoneyMult = (s._permMoneyMult||1)*1.10 },
+    { id:"boost",  title:"Use boost once",        check:(s)=>s._usedBoost===true,reward:"+3% all/s",      apply:(s)=> { s._permViewMult=(s._permViewMult||1)*1.03; s._permSubMult=(s._permSubMult||1)*1.03; s._permMoneyMult=(s._permMoneyMult||1)*1.03; } },
+    { id:"v_1m",   title:"1M views (legend)",     check:(s)=>s.views>=1_000_000, reward:"+20% clickPower",apply:(s)=> s.clickPower *= 1.20 },
+  ];
+
+  // ---------- Economy ----------
+  function calcRates(){
+    const lvl = (id) => S.upgrades[id] || 0;
+
+    let vps = 0, sps = 0, mps = 0, subToMoney = 0, viewToSubs = 0;
+
+    for (const u of UPGRADE_DEFS){
+      const L = lvl(u.id);
+      const eff = u.effect(L);
+      vps += eff.vps || 0;
+      sps += eff.sps || 0;
+      mps += eff.mps || 0;
+      subToMoney += eff.subToMoney || 0;
+      viewToSubs += eff.viewToSubs || 0;
+    }
+
+    const viewMult  = S._permViewMult  || 1;
+    const subMult   = S._permSubMult   || 1;
+    const moneyMult = S._permMoneyMult || 1;
+
+    vps *= viewMult;
+    sps *= subMult;
+    mps *= moneyMult;
+
+    // Prestige multiplier
+    const pMult = prestigeMult();
+    vps *= pMult; sps *= pMult; mps *= pMult;
+    subToMoney *= pMult; viewToSubs *= pMult;
+
+    // global x2 boost
+    const boosted = now() < (S.boostUntil || 0);
+    const boostMult = boosted ? 2 : 1;
+
+    // daily streak boost multiplier
+    const dailyMult = S._dailyBoostMult || 1;
+
+    // event multipliers
+    const ev = getActiveMults();
+    vps *= ev.v;
+    sps *= ev.s;
+    mps *= ev.money;
+
+    return {
+      vps: vps * boostMult * dailyMult,
+      sps: sps * boostMult * dailyMult,
+      mps: mps * boostMult * dailyMult,
+      subToMoney: subToMoney * boostMult * dailyMult,
+      viewToSubs: viewToSubs * boostMult * dailyMult,
+      boosted
+    };
+  }
+
+  function upgradeCost(def){
+    const L = S.upgrades[def.id] || 0;
+    return Math.floor(def.baseCost * Math.pow(def.costMult, L));
+  }
+  function canAfford(cost){ return S.money >= cost; }
+
+  function buyUpgrade(id){
+    const def = UPGRADE_DEFS.find(u=>u.id===id);
+    if(!def) return;
+    const cost = upgradeCost(def);
+    if(!canAfford(cost)){ toast("Not enough money."); return; }
+    S.money -= cost;
+    S.upgrades[id] = (S.upgrades[id] || 0) + 1;
+    toast(`${def.name} +1`);
+    log(`🛒 Bought <strong>${def.name}</strong> (lvl ${S.upgrades[id]})`);
+    render();
+  }
+
+  function click(){
+    const r = calcRates();
+    const overlayLvl = S.upgrades.overlay || 0;
+    const baseClick = (S.clickPower || 1) + overlayLvl * 0.4;
+
+    const ev = getActiveMults();
+    const perClickEvent = baseClick * (ev.click || 1);
+
+    if(!S.runStart) S.runStart = now();
+
+    const mult = r.boosted ? 1.25 : 1;
+    S.views += perClickEvent * mult;
+    S.subs  += (baseClick * 0.01) * mult;
+    S.money += (baseClick * 0.02) * mult;
+
+    render();
+  }
+
+  // ---------- Offline ----------
+  function applyOffline(){
+    const tNow = now();
+    const elapsedMs = Math.max(0, tNow - (S.lastTick || tNow));
+    const elapsedSec = Math.min(12 * 3600, Math.floor(elapsedMs / 1000));
+    if(elapsedSec <= 2) return;
+
+    const r = calcRates();
+    const gainedViews = r.vps * elapsedSec;
+    const gainedSubs  = r.sps * elapsedSec;
+    const gainedMoney = r.mps * elapsedSec;
+
+    const extraSubsFromViews = r.viewToSubs * S.views * (elapsedSec/60);
+    const extraMoneyFromSubs = r.subToMoney * S.subs  * (elapsedSec/60);
+
+    S.views += gainedViews;
+    S.subs  += gainedSubs + extraSubsFromViews;
+    S.money += gainedMoney + extraMoneyFromSubs;
+
+    $("pillOffline").textContent = `Offline: ${elapsedSec}s`;
+    log(`🕒 Offline for <strong>${elapsedSec}s</strong> → +${fmt(gainedViews)} views, +${fmt(gainedSubs)} subs, +${fmt(gainedMoney)} money`);
+  }
+
+  // ---------- Achievements ----------
+  function buildAchievements(){
+    const el = $("achList");
+    if(!el) return;
+    el.innerHTML = "";
+    for (const a of ACH){
+      const div = document.createElement("div");
+      div.className = "entry";
+      div.id = "ach_" + a.id;
+      div.innerHTML = `🏆 <strong>${a.title}</strong><br/><span style="color:var(--muted)">${a.reward}</span>`;
+      el.appendChild(div);
+    }
+  }
+
+  function checkAchievements(){
+    let changed = false;
+    for (const a of ACH){
+      if (S.achievements[a.id]) continue;
+      if (a.check(S)){
+        S.achievements[a.id] = true;
+        try{ a.apply(S); }catch{}
+        changed = true;
+        toast(`Achievement: ${a.title}`);
+        log(`🏆 Unlock: <strong>${a.title}</strong> — ${a.reward}`);
+      }
+    }
+    if(changed) render();
+  }
+
+  // ---------- UI builders ----------
+  function buildShop(){
+    const el = $("shop");
+    if(!el) return;
+    el.innerHTML = "";
+    for (const def of UPGRADE_DEFS){
+      const row = document.createElement("div");
+      row.className = "shop-item";
+      row.id = "row_" + def.id;
+
+      const meta = document.createElement("div");
+      meta.className = "meta";
+
+      const name = document.createElement("div");
+      name.className = "name";
+      name.textContent = def.name;
+
+      const note = document.createElement("div");
+      note.className = "note";
+      note.textContent = def.desc;
+
+      meta.appendChild(name);
+      meta.appendChild(note);
+
+      const right = document.createElement("div");
+      right.className = "right";
+
+      const price = document.createElement("div");
+      price.className = "price";
+      price.id = "price_" + def.id;
+
+      const lvl = document.createElement("div");
+      lvl.className = "pill";
+      lvl.id = "lvl_" + def.id;
+      lvl.textContent = "lvl 0";
+
+      const btn = document.createElement("button");
+      btn.textContent = "Buy";
+      btn.className = "btn-primary";
+      btn.onclick = () => buyUpgrade(def.id);
+
+      right.appendChild(price);
+      right.appendChild(lvl);
+      right.appendChild(btn);
+
+      row.appendChild(meta);
+      row.appendChild(right);
+
+      el.appendChild(row);
+    }
+  }
+
+  function updateDailyButtonUI(){
+    const btn = $("btnDaily");
+    if(!btn) return;
+    const { streak } = loadStreak();
+    if(canClaimDaily()){
+      btn.disabled = false;
+      btn.textContent = `🎁 Daily (Streak ${streak || 0})`;
+    }else{
+      btn.disabled = true;
+      btn.textContent = `⏳ Daily used (Streak ${streak || 0})`;
+    }
+  }
+
+  function render(force){
+    $("views").textContent = fmt(S.views);
+    $("subs").textContent  = fmt(S.subs);
+    $("money").textContent = fmt(S.money);
+
+    const r = calcRates();
+    $("vps").textContent = `+${fmt(r.vps)} per second`;
+    $("sps").textContent = `+${fmt(r.sps)} per second`;
+    $("mps").textContent = `+${fmt(r.mps)} per second`;
+
+    // prestige button
+    $("btnPrestige").textContent = canPrestige()
+      ? `✨ Prestige (+${calcPrestigeGain()} SP)`
+      : `✨ Prestige (${fmt(PRESTIGE_UNLOCK_VIEWS)} views)`;
+    $("btnPrestige").disabled = !canPrestige();
+
+    // rate pill
+    $("pillRate").textContent = `V ${fmt(r.vps)}/s · S ${fmt(r.sps)}/s · $ ${fmt(r.mps)}/s`;
+
+    // click pill
+    const overlayLvl = S.upgrades.overlay || 0;
+    $("pillClick").textContent = `Click: +${(((S.clickPower||1) + overlayLvl*0.4)).toFixed(1).replace(/\.0$/,"")}`;
+
+    // boost pill
+    const left = Math.max(0, Math.ceil(((S.boostUntil || 0) - now()) / 1000));
+    const hasDaily = !!S._dailyBoostMult;
+
+    if (left > 0) {
+      if (hasDaily) $("pillBoost").textContent = `Daily active (${left}s)`;
+      else $("pillBoost").textContent = `x2 active (${left}s)`;
+    } else {
+      $("pillBoost").textContent = "No boost";
+    }
+
+    // shop
+    for (const def of UPGRADE_DEFS){
+      const cost = upgradeCost(def);
+      $("price_"+def.id).textContent = `Price: ${fmt(cost)}`;
+      $("lvl_"+def.id).textContent = `lvl ${S.upgrades[def.id] || 0}`;
+      const row = $("row_"+def.id);
+      if(row){
+        const btn = row.querySelector("button");
+        if(btn) btn.disabled = !canAfford(cost);
+      }
+    }
+
+    // achievements visual
+    let unlocked = 0;
+    for (const a of ACH){
+      const got = !!S.achievements[a.id];
+      const el = $("ach_"+a.id);
+      if (!el) continue;
+      if (got){
+        unlocked++;
+        el.style.borderColor = "rgba(124,255,178,.22)";
+        el.style.background = "rgba(124,255,178,.06)";
+        el.style.color = "var(--text)";
+      }else{
+        el.style.borderColor = "rgba(255,255,255,.08)";
+        el.style.background = "rgba(10,16,34,.28)";
+        el.style.color = "var(--muted)";
+      }
+    }
+    $("pillAch").textContent = `${unlocked} / ${ACH.length}`;
+
+    S.lastTick = now();
+    if(force) localStorage.setItem(STORAGE_KEY, JSON.stringify(S));
+    updateDailyButtonUI();
+  }
+
+  // ---------- Rewarded boost ----------
+  function rewardBoost(){
+    if (now() < (S.boostUntil || 0)){
+      toast("Boost is already active.");
+      return;
+    }
+    S._usedBoost = true;
+    S.boostUntil = now() + 30_000;
+    toast("Boost active! x2 for 30s ⚡");
+    log(`⚡ <strong>Boost</strong> active — x2 income for 30s.`);
+    render();
+  }
+
+  // ---------- Ads modal ----------
+  function openAdsOverlay(){
+    const o = $("adsOverlay");
+    if(!o) return;
+    o.classList.add("show");
+    requestAnimationFrame(() => o.classList.add("open"));
+  }
+  function closeAdsOverlay(){
+    const o = $("adsOverlay");
+    if(!o) return;
+    o.classList.remove("open");
+    setTimeout(() => o.classList.remove("show"), 180);
+  }
+
+  // ---------- Leaderboard modal ----------
+  function openLBOverlay(){
+    const o = $("lbOverlay");
+    if(!o) return;
+    o.classList.add("show");
+    requestAnimationFrame(() => o.classList.add("open"));
+    refreshLBMyScores();
+    lbStartCooldownTicker();
+    setRankLine("views", "");
+    setRankLine("prestige", "");
+    setRankLine("speedrun", "");
+    updateLBModeButtons();
+  }
+  function closeLBOverlay(){
+    lbStopCooldownTicker();
+    const o = $("lbOverlay");
+    if(!o) return;
+    o.classList.remove("open");
+    setTimeout(() => o.classList.remove("show"), 180);
+  }
+
+  // ---------- Events loop ----------
+  function tick(dt){
+    const r = calcRates();
+    S.views += r.vps * dt;
+    S.subs  += r.sps * dt;
+    S.money += r.mps * dt;
+
+    S.subs  += r.viewToSubs * S.views * (dt/60);
+    S.money += r.subToMoney * S.subs  * (dt/60);
+
+    checkAchievements();
+  }
+
+  let lastFrame = now();
+  let lastSeenWrite = 0;
+
+  function loop(){
+    const t = now();
+    const dt = Math.min(0.2, (t - lastFrame) / 1000);
+    lastFrame = t;
+
+    tick(dt);
+    clearTimedEventIfEnded();
+    maybeTriggerEvent();
+    render(false);
+
+    if (t - (S.lastSave || 0) > 20000){
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(S));
+      S.lastSave = t;
+    }
+
+    // write "last seen" not too often
+    if(t - lastSeenWrite > 15000){
+      localStorage.setItem(COMEBACK_LAST_SEEN, String(t));
+      lastSeenWrite = t;
+    }
+
+    requestAnimationFrame(loop);
+  }
+
+  // ---------- Help modal ----------
+  function openHelp(){
+    const o = $("helpOverlay");
+    if(!o) return;
+    o.style.display = "grid";
+  }
+  function closeHelp(){
+    const o = $("helpOverlay");
+    if(!o) return;
+    o.style.display = "none";
+    localStorage.setItem(HELP_KEY, "1");
+  }
+
+  // ---------- Wire up events ----------
+  $("btnClick")?.addEventListener("click", click);
+  $("btnPrestige")?.addEventListener("click", doPrestige);
+  $("btnDaily")?.addEventListener("click", claimDaily);
+
+  $("btnSave")?.addEventListener("click", () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(S));
+    toast("Saved ✅");
+  });
+
+  $("btnReset")?.addEventListener("click", () => {
+    const ok = confirm("Reset everything? (This cannot be undone)");
+    if(ok) hardReset();
+  });
+
+  $("btnReward")?.addEventListener("click", rewardBoost);
+
+  $("btnHowAds")?.addEventListener("click", openAdsOverlay);
+  $("btnCloseAds")?.addEventListener("click", closeAdsOverlay);
+  $("adsOverlay")?.addEventListener("click", (e) => {
+    if (e.target && e.target.id === "adsOverlay") closeAdsOverlay();
+  });
+
+  $("btnCopyBanner")?.addEventListener("click", async () => {
+    const code = $("bannerSnippet")?.textContent || "";
+    try { await navigator.clipboard.writeText(code); toast("Copied ✅"); }
+    catch { toast("Could not copy (browser restriction)"); }
+  });
+  $("btnCopyAdsense")?.addEventListener("click", async () => {
+    const code = $("adsenseSnippet")?.textContent || "";
+    try { await navigator.clipboard.writeText(code); toast("Copied ✅"); }
+    catch { toast("Could not copy (browser restriction)"); }
+  });
+
+  $("btnHelp")?.addEventListener("click", openHelp);
+  $("btnCloseHelp")?.addEventListener("click", closeHelp);
+  $("btnHelpPlay")?.addEventListener("click", () => { giveStartBonus(); closeHelp(); });
+
+  // Season modal
+  $("btnSeason")?.addEventListener("click", openSeasonOverlay);
+  $("btnCloseSeason")?.addEventListener("click", closeSeasonOverlay);
+  $("seasonOverlay")?.addEventListener("click", (e) => {
+    if (e.target && e.target.id === "seasonOverlay") closeSeasonOverlay();
+  });
+  $("btnSeasonClaimDaily")?.addEventListener("click", claimDaily);
+  $("btnSeasonClaimComeback")?.addEventListener("click", claimComeback);
+  $("btnSeasonRefreshWinners")?.addEventListener("click", seasonRefreshWinners);
+
+  // Leaderboard modal
+  $("btnLB")?.addEventListener("click", openLBOverlay);
+  $("btnCloseLB")?.addEventListener("click", closeLBOverlay);
+  $("lbOverlay")?.addEventListener("click", (e) => {
+    if (e.target && e.target.id === "lbOverlay") closeLBOverlay();
+  });
+
+  $("btnLBAllTime")?.addEventListener("click", () => {
+    LB_WEEKLY_MODE = false;
+    toast("Leaderboard: All-time");
+    updateLBModeButtons();
+  });
+  $("btnLBWeekly")?.addEventListener("click", () => {
+    LB_WEEKLY_MODE = true;
+    toast("Leaderboard: Weekly");
+    updateLBModeButtons();
+  });
+
+  $("btnLBMyRankViews")?.addEventListener("click", () => showMyRank("views"));
+  $("btnLBMyRankPrestige")?.addEventListener("click", () => showMyRank("prestige"));
+  $("btnLBMyRankSpeedrun")?.addEventListener("click", () => showMyRank("speedrun"));
+
+  $("btnLBSubmitViews")?.addEventListener("click", async () => {
+    if(!lbCanSend()){ toast("Wait a bit before submitting again 🙂"); return; }
+    try{
+      await submitViews();
+      markSubmittedThisWeek();
+      lbSetCooldown(); lbUpdateCooldownUI();
+      refreshLBMyScores();
+    }catch(err){
+      toast(String(err?.message || err));
+    }
+  });
+  $("btnLBSubmitPrestige")?.addEventListener("click", async () => {
+    if(!lbCanSend()){ toast("Wait a bit before submitting again 🙂"); return; }
+    try{
+      await submitPrestige();
+      markSubmittedThisWeek();
+      lbSetCooldown(); lbUpdateCooldownUI();
+      refreshLBMyScores();
+    }catch(err){
+      toast(String(err?.message || err));
+    }
+  });
+  $("btnLBSubmitSpeedrun")?.addEventListener("click", async () => {
+    if(!lbCanSend()){ toast("Wait a bit before submitting again 🙂"); return; }
+    try{
+      await submitSpeedrun();
+      markSubmittedThisWeek();
+      lbSetCooldown(); lbUpdateCooldownUI();
+    }catch(err){
+      toast(String(err?.message || err));
+    }
+  });
+
+  $("btnLBTopViews")?.addEventListener("click", () => toggleTop("views"));
+  $("btnLBTopPrestige")?.addEventListener("click", () => toggleTop("prestige"));
+  $("btnLBTopSpeedrun")?.addEventListener("click", () => toggleTop("speedrun"));
+
+  // Weekly top buttons: force weekly mode + open same top
+  $("btnLBTopViewsWeekly")?.addEventListener("click", () => { LB_WEEKLY_MODE = true; updateLBModeButtons(); toggleTop("views"); });
+  $("btnLBTopPrestigeWeekly")?.addEventListener("click", () => { LB_WEEKLY_MODE = true; updateLBModeButtons(); toggleTop("prestige"); });
+  $("btnLBTopSpeedrunWeekly")?.addEventListener("click", () => { LB_WEEKLY_MODE = true; updateLBModeButtons(); toggleTop("speedrun"); });
+
+  // Escape closes modals
+  window.addEventListener("keydown", (e) => {
+    if (e.key !== "Escape") return;
+    closeAdsOverlay();
+    closeLBOverlay();
+    closeSeasonOverlay();
+  });
+
+  // Space = click (limited)
+  let lastSpaceClick = 0;
+  const SPACE_COOLDOWN = 160;
+  window.addEventListener("keydown", (e) => {
+    if (e.code !== "Space") return;
+    const tag = document.activeElement?.tagName;
+    if (tag === "INPUT" || tag === "TEXTAREA") return;
+    e.preventDefault();
+    const t = now();
+    if (t - lastSpaceClick < SPACE_COOLDOWN) return;
+    lastSpaceClick = t;
+    click();
+  });
+
+  // ---------- Init ----------
+  buildShop();
+  buildAchievements();
+  restoreEventSchedule();
+  applyOffline();
+  updateSeasonUI();
+  render(true);
+  checkAchievements();
+  loop();
+
+  // Show help first time
+  if(!localStorage.getItem(HELP_KEY)){
+    openHelp();
+  }
+
+  // Save on close + update last seen for comeback
+  window.addEventListener("beforeunload", ()=> {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(S));
+    localStorage.setItem(COMEBACK_LAST_SEEN, String(now()));
+  });
+})();
+</script>
+</body>
+</html>
