@@ -1247,7 +1247,6 @@
     () => setTimedEvent({v: 0.7}, 22_000, "Stream Lag", "Dropped frames... views per second reduced."),
     () => { S.subs = Math.max(0, S.subs - 12); toast("😬 Chat Drama: -12 subs"); log("😬 <strong>Chat Drama</strong> — -12 subs"); },
     () => setTimedEvent({money: 0.6}, 25_000, "Chargeback Wave", "Refunds hit. Money gain reduced."),
-    () => { S.money = Math.max(0, S.money - 80); toast("🧾 Unexpected Bill: -$80"); log("🧾 <strong>Unexpected Bill</strong> — -$80"); },
     () => setTimedEvent({s: 1.8, v: 0.85}, 20_000, "Community Night", "More subs, slightly fewer views."),
   ];
 
@@ -2182,4 +2181,5 @@
 </script>
 </body>
 </html>
+
 
