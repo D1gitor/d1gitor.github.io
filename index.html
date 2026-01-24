@@ -886,6 +886,15 @@
     const s = (x >= 100 ? x.toFixed(0) : x >= 10 ? x.toFixed(1) : x.toFixed(2));
     return s.replace(/\.0+$/,"") + units[u];
   };
+  const fmtRate = (n) => {
+  n = Number(n || 0);
+  if (Math.abs(n) >= 1000) return fmt(n);
+  return n
+    .toFixed(2)
+    .replace(/\.00$/, "")
+    .replace(/(\.\d)0$/, "$1");
+};
+
 
   function trimZeros(str){
   return str.replace(/\.0+$/,"").replace(/(\.\d*[1-9])0+$/,"$1");
@@ -1845,6 +1854,121 @@ function formatRate(n){
     };
   }
 
+    // ---------- Tooltip breakdown ----------
+  function prettyRate(x){
+    x = Number(x || 0);
+    if (Math.abs(x) < 1) return x.toFixed(3);
+    if (Math.abs(x) < 10) return x.toFixed(2);
+    return x.toFixed(2);
+  }
+
+  function calcRateBreakdown(){
+    const lvl = (id) => S.upgrades[id] || 0;
+
+    // base contributions per upgrade (before multipliers)
+    const base = {
+      vps: {}, sps: {}, mps: {},
+      viewToSubs: {}, subToMoney: {}
+    };
+
+    for (const u of UPGRADE_DEFS){
+      const L = lvl(u.id);
+      const eff = u.effect(L);
+
+      if (eff.vps) base.vps[u.name] = eff.vps;
+      if (eff.sps) base.sps[u.name] = eff.sps;
+      if (eff.mps) base.mps[u.name] = eff.mps;
+      if (eff.viewToSubs) base.viewToSubs[u.name] = eff.viewToSubs;
+      if (eff.subToMoney) base.subToMoney[u.name] = eff.subToMoney;
+    }
+
+    // sum base
+    const sum = (obj) => Object.values(obj).reduce((a,b)=>a+Number(b||0), 0);
+
+    let vps = sum(base.vps);
+    let sps = sum(base.sps);
+    let mps = sum(base.mps);
+    let viewToSubs = sum(base.viewToSubs);
+    let subToMoney = sum(base.subToMoney);
+
+    // multipliers (same logic as calcRates)
+    const viewMult  = S._permViewMult  || 1;
+    const subMult   = S._permSubMult   || 1;
+    const moneyMult = S._permMoneyMult || 1;
+
+    vps *= viewMult;
+    sps *= subMult;
+    mps *= moneyMult;
+
+    const pMult = prestigeMult();
+    vps *= pMult; sps *= pMult; mps *= pMult;
+    subToMoney *= pMult; viewToSubs *= pMult;
+
+    const boosted = now() < (S.boostUntil || 0);
+    const boostMult = boosted ? 2 : 1;
+
+    const dailyMult = S._dailyBoostMult || 1;
+
+    const ev = getActiveMults();
+    vps *= ev.v;
+    sps *= ev.s;
+    mps *= ev.money;
+
+    vps *= boostMult * dailyMult;
+    sps *= boostMult * dailyMult;
+    mps *= boostMult * dailyMult;
+    subToMoney *= boostMult * dailyMult;
+    viewToSubs *= boostMult * dailyMult;
+
+    // conversion into "per second" at current stats (matches tick math: * (dt/60))
+    const subsFromViewsPerSec  = viewToSubs * (S.views || 0) / 60;
+    const moneyFromSubsPerSec  = subToMoney * (S.subs  || 0) / 60;
+
+    return {
+      totals: { vps, sps, mps, viewToSubs, subToMoney, subsFromViewsPerSec, moneyFromSubsPerSec },
+      base
+    };
+  }
+
+  function setRateTooltips(){
+    const b = calcRateBreakdown();
+    const t = b.totals;
+
+    const linesViews = [
+      `Views / second`,
+      `Direct: ${prettyRate(t.vps)}`,
+      ``,
+      `Tip: Most views/s comes from upgrades like Better PC.`,
+    ].join("\n");
+
+    const linesSubs = [
+      `Subs / second`,
+      `Direct (Faster internet etc): ${prettyRate(t.sps)}`,
+      `From Video editor (views→subs): ${prettyRate(t.subsFromViewsPerSec)}`,
+      `Total right now: ${prettyRate(t.sps + t.subsFromViewsPerSec)}`,
+    ].join("\n");
+
+    const linesMoney = [
+      `Money / second`,
+      `Direct (Chat mods etc): ${prettyRate(t.mps)}`,
+      `From Sponsor deal (subs→money): ${prettyRate(t.moneyFromSubsPerSec)}`,
+      `Total right now: ${prettyRate(t.mps + t.moneyFromSubsPerSec)}`,
+    ].join("\n");
+
+    const vEl = $("vps"), sEl = $("sps"), mEl = $("mps");
+    if (vEl) vEl.title = linesViews;
+    if (sEl) sEl.title = linesSubs;
+    if (mEl) mEl.title = linesMoney;
+
+    const pill = $("pillRate");
+    if (pill) pill.title =
+      `Totals right now:\n` +
+      `Views/s: ${prettyRate(t.vps)}\n` +
+      `Subs/s: ${prettyRate(t.sps + t.subsFromViewsPerSec)}\n` +
+      `Money/s: ${prettyRate(t.mps + t.moneyFromSubsPerSec)}`;
+  }
+
+
   function upgradeCost(def){
     const L = S.upgrades[def.id] || 0;
     return Math.floor(def.baseCost * Math.pow(def.costMult, L));
@@ -2070,10 +2194,11 @@ $("pillRate").textContent =
       }
     }
     $("pillAch").textContent = `${unlocked} / ${ACH.length}`;
-
+    setRateTooltips();
     S.lastTick = now();
     if(force) localStorage.setItem(STORAGE_KEY, JSON.stringify(S));
     updateDailyButtonUI();
+    
   }
 
   // ---------- Rewarded boost ----------
