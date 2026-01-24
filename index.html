@@ -2125,7 +2125,7 @@ const UPGRADE_DEFS = [
     desc:"More views per second. (Your sound gets better)",
     baseCost:45,
     costMult:1.25,
-    effect:(lvl)=>({ vps: 0.85 * Math.pow(lvl, 1.14) })
+    effect:(lvl)=>({ mps: 0.16 * lvl, vps: 0.85 * Math.pow(lvl, 1.14) })
   },
 
   // SUPPORT upgrades (gir litt views også)
@@ -3093,6 +3093,7 @@ $("statsOverlay")?.addEventListener("click", (e) => {
 </script>
 </body>
 </html>
+
 
 
 
