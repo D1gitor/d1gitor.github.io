@@ -1808,6 +1808,7 @@ function formatRate(n){
   // ---------- Game content ----------
   const UPGRADE_DEFS = [
     { id:"pc",      name:"Better PC",        desc:"More views per second. (GPU goes BRRR)", baseCost:50,  costMult:1.25, effect:(lvl)=>({ vps: 0.6 * lvl }) },
+    { id:"mic",      name:"Better Microphone",        desc:"More views per second. (Your Sound getting better)", baseCost:1,  costMult:1.25, effect:(lvl)=>({ vps: 1.0 * lvl }) },
     { id:"net",     name:"Faster internet",  desc:"Stable stream → more subs per second.",  baseCost:120, costMult:1.28, effect:(lvl)=>({ sps: 0.06 * lvl }) },
     { id:"overlay", name:"Pro overlay",      desc:"More click value (chat is impressed).",  baseCost:90,  costMult:1.26, effect:(lvl)=>({ click: 0.4 * lvl }) },
     { id:"mods",    name:"Chat mods",        desc:"Fewer trolls → more money per second.",  baseCost:220, costMult:1.30, effect:(lvl)=>({ mps: 0.14 * lvl }) },
@@ -2602,4 +2603,5 @@ $("statsOverlay")?.addEventListener("click", (e) => {
 </script>
 </body>
 </html>
+
 
