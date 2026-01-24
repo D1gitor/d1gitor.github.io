@@ -2051,6 +2051,8 @@ function renderQuests(){
     const pct = Math.max(0, Math.min(100, Math.floor((prog / def.goal) * 100)));
     const completed = prog >= def.goal;
     const claimed = !!st.claimed;
+    if (claimed) continue; // <-- skjul claimed quests
+
 
     if(claimed) done++;
 
@@ -2099,8 +2101,10 @@ function renderQuests(){
     }
   }
 
-  const pill = $("pillQuests");
-  if(pill) pill.textContent = `${done} / ${DAILY_QUESTS.length}`;
+const pill = $("pillQuests");
+const claimedCount = DAILY_QUESTS.filter(q => q.claimed).length;
+if(pill) pill.textContent = `${claimedCount} / ${DAILY_QUESTS.length}`;
+
 }
 
 
