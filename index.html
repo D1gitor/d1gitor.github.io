@@ -423,23 +423,26 @@
           <div class="pill" id="pillRate">0 /s</div>
         </div>
 
-        <div class="stats">
-          <div class="stat">
-            <div class="label">Views</div>
-            <div class="value" id="views">0</div>
-            <div class="subline" id="vps">+0 per second</div>
-          </div>
-          <div class="stat">
-            <div class="label">Subs</div>
-            <div class="value" id="subs">0</div>
-            <div class="subline" id="sps">+0 per second</div>
-          </div>
-          <div class="stat">
-            <div class="label">Money</div>
-            <div class="value" id="money">0</div>
-            <div class="subline" id="mps">+0 per second</div>
-          </div>
-        </div>
+<div class="stats">
+  <div class="stat" id="statViews">
+    <div class="label">Views</div>
+    <div class="value" id="views">0</div>
+    <div class="subline" id="vps">+0 per second</div>
+  </div>
+
+  <div class="stat" id="statSubs">
+    <div class="label">Subs</div>
+    <div class="value" id="subs">0</div>
+    <div class="subline" id="sps">+0 per second</div>
+  </div>
+
+  <div class="stat" id="statMoney">
+    <div class="label">Money</div>
+    <div class="value" id="money">0</div>
+    <div class="subline" id="mps">+0 per second</div>
+  </div>
+</div>
+
 
         <div class="clicker">
           <div class="left">
@@ -1959,6 +1962,19 @@ function formatRate(n){
     if (vEl) vEl.title = linesViews;
     if (sEl) sEl.title = linesSubs;
     if (mEl) mEl.title = linesMoney;
+
+    // Put the same tooltip on the whole stat cards (easier to hover)
+const sv = $("statViews"), ss = $("statSubs"), sm = $("statMoney");
+if (sv) sv.title = linesViews;
+if (ss) ss.title = linesSubs;
+if (sm) sm.title = linesMoney;
+
+// Optional: also on the big numbers
+const vVal = $("views"), sVal = $("subs"), mVal = $("money");
+if (vVal) vVal.title = linesViews;
+if (sVal) sVal.title = linesSubs;
+if (mVal) mVal.title = linesMoney;
+
 
     const pill = $("pillRate");
     if (pill) pill.title =
