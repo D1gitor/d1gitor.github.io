@@ -401,7 +401,21 @@
       </div>
     </header>
 
+          <!-- Mini intro (helps AdSense review: clear purpose + content) -->
+<div class="card" style="margin-bottom:14px;">
+  <div class="section-title">
+    <h2>About this game</h2>
+    <div class="pill">Idle / Incremental</div>
+  </div>
+  <div style="color:rgba(234,240,255,.75); font-size:13px; line-height:1.5;">
+    Streamer Idle Simulator is a small browser game where you grow views, subs, and money over time.
+    Click <strong>Go live</strong>, buy upgrades, keep your streak, and climb the weekly competition.
+    <span style="color:rgba(234,240,255,.65);">No downloads — progress is saved locally in your browser.</span>
+  </div>
+</div>
+
     <div class="grid">
+
       <!-- LEFT -->
       <div class="card">
         <div class="section-title">
@@ -438,26 +452,68 @@
           </div>
         </div>
 
-        <div class="big-action">
-          <div class="adbox">
-            <div>
-              <strong>Rewarded boost</strong><br/>
-              Watch an “ad” → <span style="color:var(--good);font-weight:800">x2 income</span> for 30 sec.
-            </div>
-            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end">
-              <button id="btnReward" class="btn-good">Watch Ad → x2</button>
-              <span class="pill" id="pillBoost">No boost</span>
-            </div>
-          </div>
+ <div class="big-action">
 
-          <div class="adbox">
-            <div>
-              <strong>Banner ad</strong><br/>
-              Placeholder for MVP. Replace with AdSense when you’re ready.
-            </div>
-            <button id="btnHowAds">Ads go here</button>
-          </div>
+  <!-- Bonus boost -->
+  <div class="adbox" style="border-style:solid;">
+    <div style="display:flex; gap:10px; align-items:flex-start; min-width:0;">
+      <div style="
+        width:34px; height:34px; border-radius:12px;
+        display:grid; place-items:center;
+        border:1px solid rgba(124,255,178,.22);
+        background: rgba(124,255,178,.07);
+        flex: 0 0 auto;
+      ">⚡</div>
+
+      <div style="display:flex; flex-direction:column; gap:4px; min-width:0;">
+        <div style="font-weight:900; letter-spacing:.2px;">Bonus boost</div>
+        <div style="color:rgba(234,240,255,.70); line-height:1.35;">
+          Activate a <span style="color:var(--good); font-weight:900;">x2 income</span> boost for 30 sec.
         </div>
+
+        <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:4px;">
+          <span class="pill" id="pillBoost">No boost</span>
+          <span class="pill" style="opacity:.85;">Tip: use it before buying upgrades</span>
+        </div>
+      </div>
+    </div>
+
+    <button id="btnReward" class="btn-good" style="border-radius:14px; padding:10px 12px;">
+      Get boost → x2
+    </button>
+  </div>
+
+  <!-- Extra space -->
+  <div class="adbox" style="border-style:solid;">
+    <div style="display:flex; gap:10px; align-items:flex-start; min-width:0;">
+      <div style="
+        width:34px; height:34px; border-radius:12px;
+        display:grid; place-items:center;
+        border:1px solid rgba(122,167,255,.22);
+        background: rgba(122,167,255,.07);
+        flex: 0 0 auto;
+      ">🧩</div>
+
+      <div style="display:flex; flex-direction:column; gap:4px; min-width:0;">
+        <div style="font-weight:900; letter-spacing:.2px;">Extra space</div>
+        <div style="color:rgba(234,240,255,.70); line-height:1.35;">
+          A small info panel for later features. Keep it clean and useful.
+        </div>
+
+        <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:4px;">
+          <span class="pill" style="opacity:.85;">Roadmap / Info</span>
+          <span class="pill" style="opacity:.85;">Safe placeholder</span>
+        </div>
+      </div>
+    </div>
+
+    <button id="btnHowAds" style="border-radius:14px; padding:10px 12px;">
+      Info
+    </button>
+  </div>
+
+</div>
+
       </div>
 
       <!-- RIGHT -->
@@ -487,6 +543,23 @@
         </div>
       </div>
     </div>
+    <!-- Footer navigation (helps AdSense: clear navigation + policy access) -->
+<footer class="card" style="margin-top:14px;">
+  <div style="display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; align-items:center;">
+    <div style="color:rgba(234,240,255,.70); font-size:12px; line-height:1.4;">
+      <strong>Streamer Idle Simulator</strong><br/>
+      <span style="color:rgba(234,240,255,.55);">A simple incremental web game. Saved locally in your browser.</span>
+    </div>
+
+    <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;">
+      <button id="btnLegalAbout" style="border-radius:14px;">About</button>
+      <button id="btnLegalPrivacy" style="border-radius:14px;">Privacy</button>
+      <button id="btnLegalTerms" style="border-radius:14px;">Terms</button>
+      <button id="btnLegalContact" style="border-radius:14px;">Contact</button>
+    </div>
+  </div>
+</footer>
+
   </div>
 
   <!-- Help modal -->
@@ -537,7 +610,7 @@
   <div id="adsOverlay" class="modal-overlay">
     <div class="modal-card">
       <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:10px;">
-        <div style="font-weight:900; font-size:16px;">Ads / Monetization</div>
+        <div style="font-weight:900; font-size:16px;">Monetization (later)</div>
         <button id="btnCloseAds" class="btn-bad" style="padding:8px 10px;">✕</button>
       </div>
 
@@ -547,7 +620,7 @@
 
       <div style="margin-top:12px; display:grid; gap:10px;">
         <div style="border:1px solid rgba(255,255,255,.10); background:rgba(10,16,34,.35); border-radius:18px; padding:12px;">
-          <div style="font-weight:850; font-size:13px;">1) Banner-spot (placeholder)</div>
+          <div style="font-weight:850; font-size:13px;">1) Placeholder spot</div>
           <pre style="margin:10px 0 0; padding:10px; border-radius:14px; border:1px solid rgba(255,255,255,.10); background:rgba(0,0,0,.25); overflow:auto; font-size:12px; color:rgba(234,240,255,.85);"><code id="bannerSnippet">&lt;div id="banner-ad"&gt;Banner placeholder&lt;/div&gt;</code></pre>
           <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:10px;">
             <button id="btnCopyBanner" class="btn-primary" style="border-radius:14px; padding:10px 12px;">Copy snippet</button>
@@ -555,8 +628,8 @@
         </div>
 
         <div style="border:1px solid rgba(255,255,255,.10); background:rgba(10,16,34,.35); border-radius:18px; padding:12px;">
-          <div style="font-weight:850; font-size:13px;">2) AdSense (example)</div>
-          <pre style="margin:10px 0 0; padding:10px; border-radius:14px; border:1px solid rgba(255,255,255,.10); background:rgba(0,0,0,.25); overflow:auto; font-size:12px; color:rgba(234,240,255,.85);"><code id="adsenseSnippet">&lt;!-- Paste your real AdSense code here --&gt;</code></pre>
+          <div style="font-weight:850; font-size:13px;">2) Ad code (later)</div>
+          <pre style="margin:10px 0 0; padding:10px; border-radius:14px; border:1px solid rgba(255,255,255,.10); background:rgba(0,0,0,.25); overflow:auto; font-size:12px; color:rgba(234,240,255,.85);"><code id="adsenseSnippet">&lt;!-- Add your monetization code here later --&gt;</code></pre>
           <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:10px;">
             <button id="btnCopyAdsense" class="btn-primary" style="border-radius:14px; padding:10px 12px;">Copy example</button>
           </div>
@@ -753,6 +826,23 @@
     </div>
   </div>
 
+  <!-- Legal / Policy modal -->
+<div id="legalOverlay" class="modal-overlay">
+  <div class="modal-card">
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:10px;">
+      <div style="font-weight:900; font-size:16px;" id="legalTitle">Info</div>
+      <button id="btnCloseLegal" class="btn-bad" style="padding:8px 10px;">✕</button>
+    </div>
+
+    <div id="legalBody" style="color:rgba(234,240,255,.75); font-size:13px; line-height:1.55;"></div>
+
+    <div style="text-align:right; font-size:11px; color:var(--muted); margin-top:10px;">
+      Press ESC to close
+    </div>
+  </div>
+</div>
+
+
   <!-- Event popup -->
   <div id="eventToast" style="
     position:fixed; left:50%; top:18px; transform:translateX(-50%);
@@ -875,6 +965,8 @@
   // Weekly history (local snapshots)
   const WEEKLY_HISTORY_KEY = "streamer_idle_weekly_history_v1";
   const WEEKLY_HISTORY_MAX = 12;
+
+
 
   function loadWeeklyHistory(){
     try{ return JSON.parse(localStorage.getItem(WEEKLY_HISTORY_KEY) || "[]"); }
@@ -1930,10 +2022,76 @@
     }
     S._usedBoost = true;
     S.boostUntil = now() + 30_000;
-    toast("Boost active! x2 for 30s ⚡");
+    toast("⚡ Boost active! x2 for 30s");
     log(`⚡ <strong>Boost</strong> active — x2 income for 30s.`);
     render();
   }
+
+
+    // ---------- Legal / Policy modal ----------
+  function openLegalOverlay(){
+    const o = $("legalOverlay");
+    if(!o) return;
+    o.classList.add("show");
+    requestAnimationFrame(() => o.classList.add("open"));
+  }
+  function closeLegalOverlay(){
+    const o = $("legalOverlay");
+    if(!o) return;
+    o.classList.remove("open");
+    setTimeout(() => o.classList.remove("show"), 180);
+  }
+
+  function setLegalContent(kind){
+    const t = $("legalTitle");
+    const b = $("legalBody");
+    if(!t || !b) return;
+
+    if(kind === "about"){
+      t.textContent = "About";
+      b.innerHTML = `
+        <p><strong>Streamer Idle Simulator</strong> is a lightweight incremental game you can play in the browser.</p>
+        <p>Your progress (views, upgrades, streaks) is saved locally using <strong>localStorage</strong> on your device.</p>
+        <p>This is an indie prototype. More features may be added over time.</p>
+      `;
+      return;
+    }
+
+    if(kind === "privacy"){
+      t.textContent = "Privacy Policy";
+      b.innerHTML = `
+        <p><strong>What we store:</strong> This game saves your progress locally in your browser (localStorage). This includes game stats and settings.</p>
+        <p><strong>Cookies:</strong> The game itself does not require cookies to function. If ads are enabled, advertising partners may use cookies or similar technologies.</p>
+        <p><strong>Data sharing:</strong> We do not sell your personal data. Leaderboard submissions include only the nickname you enter and your score/time.</p>
+        <p><strong>Contact:</strong> Use the Contact section for questions.</p>
+      `;
+      return;
+    }
+
+    if(kind === "terms"){
+      t.textContent = "Terms";
+      b.innerHTML = `
+        <p>By using this site, you agree to play at your own risk. The game is provided “as is”.</p>
+        <p><strong>Leaderboard:</strong> Do not submit offensive names. Scores may be moderated or removed.</p>
+        <p><strong>No guarantees:</strong> We may change or remove features at any time.</p>
+      `;
+      return;
+    }
+
+    if(kind === "contact"){
+      t.textContent = "Contact";
+      b.innerHTML = `
+        <p>If you need help, have feedback, or want to report a bug:</p>
+        <p><strong>GitHub:</strong> Use the repository Issues page (recommended).</p>
+        <p style="color:rgba(234,240,255,.55); font-size:12px;">Tip: Add a README + Issues for better trust during AdSense review.</p>
+      `;
+      return;
+    }
+
+    t.textContent = "Info";
+    b.textContent = "";
+  }
+
 
   // ---------- Ads modal ----------
   function openAdsOverlay(){
@@ -2024,6 +2182,17 @@
   }
 
   // ---------- Wire up events ----------
+    // Legal buttons
+  $("btnLegalAbout")?.addEventListener("click", () => { setLegalContent("about"); openLegalOverlay(); });
+  $("btnLegalPrivacy")?.addEventListener("click", () => { setLegalContent("privacy"); openLegalOverlay(); });
+  $("btnLegalTerms")?.addEventListener("click", () => { setLegalContent("terms"); openLegalOverlay(); });
+  $("btnLegalContact")?.addEventListener("click", () => { setLegalContent("contact"); openLegalOverlay(); });
+
+  $("btnCloseLegal")?.addEventListener("click", closeLegalOverlay);
+  $("legalOverlay")?.addEventListener("click", (e) => {
+    if (e.target && e.target.id === "legalOverlay") closeLegalOverlay();
+  });
+
   $("btnClick")?.addEventListener("click", click);
   $("btnPrestige")?.addEventListener("click", doPrestige);
   $("btnDaily")?.addEventListener("click", claimDaily);
@@ -2141,6 +2310,8 @@
     closeAdsOverlay();
     closeLBOverlay();
     closeSeasonOverlay();
+    closeLegalOverlay();
+
   });
 
   // Space = click (limited)
@@ -2181,5 +2352,4 @@
 </script>
 </body>
 </html>
-
 
