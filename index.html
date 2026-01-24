@@ -2145,15 +2145,21 @@ if (mVal) mVal.title = linesMoney;
     $("money").textContent = fmt(S.money);
     
 
-    const r = calcRates();
-    const subsFromViewsPerSec = (r.viewToSubs * (S.views || 0)) / 60;
-const moneyFromSubsPerSec = (r.subToMoney * (S.subs || 0)) / 60;
+const r = calcRates();
+
+const subsFromViewsPerSec  = (r.viewToSubs * (S.views || 0)) / 60;
+const moneyFromSubsPerSec  = (r.subToMoney * (S.subs || 0)) / 60;
+
+const totalSps = r.sps + subsFromViewsPerSec;
+const totalMps = r.mps + moneyFromSubsPerSec;
+
 $("vps").textContent = `+${formatRate(r.vps)} per second`;
-$("sps").textContent = `+${formatRate(r.sps)} per second`;
-$("mps").textContent = `+${formatRate(r.mps)} per second`;
+$("sps").textContent = `+${formatRate(totalSps)} per second`;
+$("mps").textContent = `+${formatRate(totalMps)} per second`;
 
 $("pillRate").textContent =
-  `V ${formatRate(r.vps)}/s · S ${formatRate(r.sps)}/s · $ ${formatRate(r.mps)}/s`;
+  `V ${formatRate(r.vps)}/s · S ${formatRate(totalSps)}/s · $ ${formatRate(totalMps)}/s`;
+
 
 
 
