@@ -1134,6 +1134,11 @@ const QUEST_DAY_KEY = "streamer_idle_daily_quests_day";  // YYYY-M-D (UTC)
     views: 0,
     subs: 0,
     money: 0,
+
+      // 🔁 Prestige
+    prestigePoints: 0,   // totale SP
+    prestigeCount: 0,    // hvor mange ganger man har prestiga
+
     clickPower: 1,
     upgrades: { pc:0, mic:0, net:0, overlay:0, mods:0, sponsor:0, editor:0 },
     boostUntil: 0,
@@ -1215,36 +1220,32 @@ const QUEST_DAY_KEY = "streamer_idle_daily_quests_day";  // YYYY-M-D (UTC)
     return (S.views || 0) >= PRESTIGE_UNLOCK_VIEWS;
   }
   function doPrestige(){
-    if(!canPrestige()){
-      toast(`You need ${fmt(PRESTIGE_UNLOCK_VIEWS)} views to Prestige.`);
-      return;
-    }
-    const gain = calcPrestigeGain();
-    if(gain <= 0){
-      toast("No SP yet. Play a bit more!");
-      return;
-    }
-    const ok = confirm(`Prestige now?\n\nYou get: +${gain} SP\nThis resets views/subs/money and upgrades.`);
-    if(!ok) return;
-
-    const p = loadPrestige();
-    p.sp += gain;
-    p.totalPrestiges += 1;
-    savePrestige(p);
-
-    S.views = 0;
-    S.subs = 0;
-    S.money = 0;
-    S.upgrades = structuredClone(DEFAULT.upgrades);
-    S.boostUntil = 0;
-    delete S._dailyBoostMult;
-
-    toast(`✨ Prestige! +${gain} SP (total ${p.sp})`);
-    log(`✨ <strong>Prestige</strong> — +${gain} SP (total ${p.sp})`);
-    questEvent("prestige", 1);
-    buildShop();
-    render(true);
+  if (S.views < 500_000) {
+    alert("You need at least 500K views to Prestige.");
+    return;
   }
+
+  // SP-formel
+  const gainedSP = Math.floor(S.views / 500_000);
+
+  if (!confirm(`Prestige now?\n\nYou will gain ${gainedSP} Prestige Points.`)) return;
+
+  // Gi SP
+  S.prestigePoints = (S.prestigePoints || 0) + gainedSP;
+  S.prestige = (S.prestige || 0) + 1;
+
+  // Reset run
+  S.views = 0;
+  S.subs = 0;
+  S.money = 0;
+  S.upgrades = {};
+
+  save();
+  render(true);
+
+  alert(`Prestige complete!\n+${gainedSP} Prestige Points`);
+}
+
 
   // ---------- Daily Streak + Comeback ----------
   const STREAK_REWARDS = [
@@ -2160,7 +2161,7 @@ const UPGRADE_DEFS = [
     baseCost:220,
     costMult:1.30,
     effect:(lvl)=>({
-      mps: 0.25 * lvl,
+      mps: 0.55 * lvl,
       // litt views fordi streamen flyter bedre
       vps: 0.10 * lvl
     })
@@ -2258,6 +2259,12 @@ const UPGRADE_DEFS = [
   return 1 + Math.log10(totalLvl + 1) * 0.25; // juster 0.25 om du vil mer/mindre
 }
 
+function prestigeMult(){
+  // 5% per Prestige Point
+  return 1 + (S.prestigePoints || 0) * 0.05;
+}
+
+
   function calcRates(){
     const lvl = (id) => S.upgrades[id] || 0;
 
@@ -2284,6 +2291,11 @@ const UPGRADE_DEFS = [
 vps *= mm;
 sps *= mm;
 mps *= mm;
+
+const pm = prestigeMult();
+vps *= pm;
+sps *= pm;
+mps *= pm;
 
 
     // Prestige multiplier
@@ -3093,7 +3105,6 @@ $("statsOverlay")?.addEventListener("click", (e) => {
 </script>
 </body>
 </html>
-
 
 
 
