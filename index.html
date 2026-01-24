@@ -2146,6 +2146,8 @@ if (mVal) mVal.title = linesMoney;
     
 
     const r = calcRates();
+    const subsFromViewsPerSec = (r.viewToSubs * (S.views || 0)) / 60;
+const moneyFromSubsPerSec = (r.subToMoney * (S.subs || 0)) / 60;
 $("vps").textContent = `+${formatRate(r.vps)} per second`;
 $("sps").textContent = `+${formatRate(r.sps)} per second`;
 $("mps").textContent = `+${formatRate(r.mps)} per second`;
@@ -2160,10 +2162,6 @@ $("pillRate").textContent =
       ? `✨ Prestige (+${calcPrestigeGain()} SP)`
       : `✨ Prestige (${fmt(PRESTIGE_UNLOCK_VIEWS)} views)`;
     $("btnPrestige").disabled = !canPrestige();
-
-    // rate pill
-    $("pillRate").textContent =
-  `V ${formatPerSecond(r.vps)}/s · S ${formatPerSecond(r.sps)}/s · $ ${formatPerSecond(r.mps)}/s`;
 
 
     // click pill
@@ -2556,5 +2554,4 @@ $("pillRate").textContent =
 </script>
 </body>
 </html>
-
 
