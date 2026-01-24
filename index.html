@@ -354,6 +354,18 @@
 #pillRate { cursor: pointer; }
 #pillRate:hover { border-color: rgba(255,255,255,.20); background: rgba(255,255,255,.08); }
 
+#questList button{
+  position: relative;
+  z-index: 5;
+  pointer-events: auto;
+}
+
+#questList .entry{
+  position: relative;
+  z-index: 1;
+}
+
+
 
 
     .toast{
@@ -492,6 +504,17 @@
       Get boost → x2
     </button>
   </div>
+
+  <!-- Daily Quests -->
+<div class="card" style="margin-top:14px;">
+  <div class="section-title">
+    <h2>Daily Quests</h2>
+    <div class="pill" id="pillQuests">0 / 3</div>
+  </div>
+  <div class="log" id="questList" style="max-height:220px;"></div>
+</div>
+
+
 
   <!-- Extra space -->
   <div class="adbox" style="border-style:solid;">
@@ -1032,6 +1055,11 @@ function formatRate(n){
   const STORAGE_KEY = "streamer_idle_v1";
   const HELP_KEY = "streamer_idle_seen_help_v1";
   const START_BONUS_KEY = "streamer_idle_start_bonus_v1";
+  // Daily quests
+const QUEST_KEY = "streamer_idle_daily_quests_v1";       // quest state for today
+const QUEST_DAY_KEY = "streamer_idle_daily_quests_day";  // YYYY-M-D (UTC)
+
+
 
   // Prestige
   const PRESTIGE_KEY = "streamer_idle_prestige_v1";
@@ -1107,7 +1135,7 @@ function formatRate(n){
     subs: 0,
     money: 0,
     clickPower: 1,
-    upgrades: { pc:0, net:0, overlay:0, mods:0, sponsor:0, editor:0 },
+    upgrades: { pc:0, mic:0, net:0, overlay:0, mods:0, sponsor:0, editor:0 },
     boostUntil: 0,
     lastTick: now(),
     lastSave: now(),
@@ -1213,6 +1241,7 @@ function formatRate(n){
 
     toast(`✨ Prestige! +${gain} SP (total ${p.sp})`);
     log(`✨ <strong>Prestige</strong> — +${gain} SP (total ${p.sp})`);
+    questEvent("prestige", 1);
     buildShop();
     render(true);
   }
@@ -1808,6 +1837,270 @@ function formatRate(n){
     }
   }
 
+  // ---------- Daily Quests ----------
+function todayQuestKeyUTC(){
+  // samme format som todayKeyUTC() men vi bruker den direkte om du vil
+  return todayKeyUTC();
+}
+
+// Vi trenger en måte å tracke “events” (click, buy, prestige)
+const Q = {
+  clicks: 0,
+  buys: 0,
+  prestiged: 0,
+};
+
+/* ✅ LEGG INN DENNE BLOKKA HER (rett etter Q) */
+const Q_KEY = "streamer_idle_daily_q_counters_v1";
+
+function loadQ(){
+  try{ return JSON.parse(localStorage.getItem(Q_KEY) || "{}"); }
+  catch{ return {}; }
+}
+function saveQ(){
+  try{ localStorage.setItem(Q_KEY, JSON.stringify(Q)); }catch{}
+}
+
+// restore
+Object.assign(Q, loadQ());
+/* ✅ SLUTT PÅ BLOKKA */
+
+// Call denne når spilleren klikker / kjøper / prestiger
+function questEvent(type, amount = 1){
+  if(type === "click") Q.clicks += amount;
+  if(type === "buy")   Q.buys   += amount;
+  if(type === "prestige") Q.prestiged += amount;
+  saveQ();
+}
+
+// Quest pool (du kan legge til flere senere)
+const QUEST_POOL = [
+  {
+    id: "click_80",
+    title: "Click 80 times",
+    desc: "Spam Go live og bygg momentum.",
+    goal: 80,
+    type: "clicks",
+    rewardText: "+$500",
+    reward: () => { S.money += 500; }
+  },
+  {
+    id: "buy_6",
+    title: "Buy 6 upgrades",
+    desc: "Kjøp upgrades i Shop.",
+    goal: 6,
+    type: "buys",
+    rewardText: "+30s x2 boost",
+    reward: () => {
+      // gir en ekstra boost-periode
+      S.boostUntil = Math.max(S.boostUntil || 0, now()) + 30_000;
+      toast("⚡ Quest reward: +30s boost!");
+    }
+  },
+  {
+    id: "gain_views_200k",
+    title: "Gain 200K views today",
+    desc: "Tjen views i dag (ikke total).",
+    goal: 200_000,
+    type: "deltaViews",
+    rewardText: "+$1.5K",
+    reward: () => { S.money += 1500; }
+  },
+  {
+    id: "gain_money_20k",
+    title: "Earn 20K money today",
+    desc: "Samle money i dag (ikke total).",
+    goal: 20_000,
+    type: "deltaMoney",
+    rewardText: "+10m +15% (daily boost)",
+    reward: () => {
+      // daily boost-mult (stacker med streak/andre boosts)
+      S.boostUntil = Math.max(S.boostUntil || 0, now()) + 10 * 60 * 1000;
+      S._dailyBoostMult = (S._dailyBoostMult || 1) * 1.15;
+      toast("🎁 Quest reward: +15% i 10 min!");
+    }
+  },
+  {
+    id: "prestige_1",
+    title: "Prestige once",
+    desc: "Prestige 1 gang i dag.",
+    goal: 1,
+    type: "prestiged",
+    rewardText: "+$3K",
+    reward: () => { S.money += 3000; }
+  },
+];
+
+// Lager dagens 3 quests
+function pickDailyQuests(){
+  const pool = [...QUEST_POOL];
+  // shuffle
+  for(let i = pool.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  return pool.slice(0, 3).map(q => ({
+    id: q.id,
+    claimed: false,
+    // “delta”-quests trenger startverdier
+    startViews: S.views || 0,
+    startMoney: S.money || 0,
+  }));
+}
+
+function loadQuests(){
+  try{
+    const day = localStorage.getItem(QUEST_DAY_KEY) || "";
+    const today = todayQuestKeyUTC();
+
+    if(day !== today){
+      // ny dag -> generer nye quests
+      const fresh = pickDailyQuests();
+      localStorage.setItem(QUEST_DAY_KEY, today);
+      localStorage.setItem(QUEST_KEY, JSON.stringify(fresh));
+      // reset counters for day
+      Q.clicks = 0; Q.buys = 0; Q.prestiged = 0;
+      saveQ();
+      return fresh;
+    }
+
+    const raw = localStorage.getItem(QUEST_KEY);
+    if(!raw) {
+      const fresh = pickDailyQuests();
+      localStorage.setItem(QUEST_KEY, JSON.stringify(fresh));
+      return fresh;
+    }
+    return JSON.parse(raw);
+  }catch{
+    const fresh = pickDailyQuests();
+    try{
+      localStorage.setItem(QUEST_DAY_KEY, todayQuestKeyUTC());
+      localStorage.setItem(QUEST_KEY, JSON.stringify(fresh));
+    }catch{}
+    return fresh;
+  }
+}
+
+function saveQuests(quests){
+  try{ localStorage.setItem(QUEST_KEY, JSON.stringify(quests)); }catch{}
+}
+
+let DAILY_QUESTS = loadQuests();
+
+function getQuestDef(id){
+  return QUEST_POOL.find(q => q.id === id);
+}
+
+function questProgress(def, st){
+  // st = quest state entry
+  if(def.type === "clicks") return Q.clicks;
+  if(def.type === "buys") return Q.buys;
+  if(def.type === "prestiged") return Q.prestiged;
+
+  if(def.type === "deltaViews") return Math.max(0, (S.views || 0) - (st.startViews || 0));
+  if(def.type === "deltaMoney") return Math.max(0, (S.money || 0) - (st.startMoney || 0));
+
+  return 0;
+}
+
+function canClaimQuest(def, st){
+  if(st.claimed) return false;
+  return questProgress(def, st) >= def.goal;
+}
+
+function claimQuest(id){
+  const st = DAILY_QUESTS.find(q => q.id === id);
+  const def = getQuestDef(id);
+  if(!st || !def) return;
+
+  if(!canClaimQuest(def, st)){
+    toast("Quest not completed yet 🙂");
+    return;
+  }
+
+  st.claimed = true;
+  try{ def.reward(); }catch{}
+  saveQuests(DAILY_QUESTS);
+  toast(`✅ Quest claimed: ${def.rewardText}`);
+  render(true);
+  renderQuests();
+}
+
+function renderQuests(){
+  const el = $("questList");
+  if(!el) return;
+
+  // reload daily if day changed
+  const day = localStorage.getItem(QUEST_DAY_KEY) || "";
+  if(day !== todayQuestKeyUTC()){
+    DAILY_QUESTS = loadQuests();
+  }
+
+  el.innerHTML = "";
+
+  let done = 0;
+
+  for(const st of DAILY_QUESTS){
+    const def = getQuestDef(st.id);
+    if(!def) continue;
+
+    const prog = questProgress(def, st);
+    const pct = Math.max(0, Math.min(100, Math.floor((prog / def.goal) * 100)));
+    const completed = prog >= def.goal;
+    const claimed = !!st.claimed;
+
+    if(claimed) done++;
+
+    const row = document.createElement("div");
+    row.className = "entry";
+    row.style.borderColor = claimed ? "rgba(124,255,178,.22)" : "rgba(255,255,255,.08)";
+    row.style.background = claimed ? "rgba(124,255,178,.06)" : "rgba(10,16,34,.28)";
+    row.style.color = claimed ? "var(--text)" : "var(--muted)";
+
+    row.innerHTML = `
+      <div style="display:flex; justify-content:space-between; gap:10px; align-items:flex-start;">
+        <div style="min-width:0;">
+          <strong style="color:${claimed ? "var(--text)" : "var(--text)"}">${def.title}</strong><br/>
+          <span style="color:rgba(234,240,255,.65)">${def.desc}</span><br/>
+          <span style="color:rgba(234,240,255,.55); font-size:11px;">
+            Progress: ${fmt(prog)} / ${fmt(def.goal)} (${pct}%)
+          </span>
+          <div style="margin-top:8px; height:8px; border-radius:999px; background:rgba(255,255,255,.08); overflow:hidden;">
+            <div style="height:100%; width:${pct}%; background:rgba(122,167,255,.55);"></div>
+          </div>
+          <div style="margin-top:6px; font-size:11px; color:rgba(234,240,255,.55);">
+            Reward: ${def.rewardText}
+          </div>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:8px; align-items:flex-end;">
+          <button
+            style="border-radius:14px; padding:8px 10px;"
+            ${claimed ? "disabled" : ""}
+            class="${completed && !claimed ? "btn-primary" : ""}"
+            id="quest_btn_${def.id}"
+          >
+            ${claimed ? "Claimed" : (completed ? "Claim" : "Not ready")}
+          </button>
+        </div>
+      </div>
+    `;
+
+    el.appendChild(row);
+
+    // wire button
+    const btn = row.querySelector(`#quest_btn_${CSS.escape(def.id)}`);
+    if(btn){
+      btn.disabled = claimed || !completed;
+      btn.addEventListener("click", () => claimQuest(def.id));
+    }
+  }
+
+  const pill = $("pillQuests");
+  if(pill) pill.textContent = `${done} / ${DAILY_QUESTS.length}`;
+}
+
+
   // ---------- Game content ----------
   const UPGRADE_DEFS = [
     { id:"pc",      name:"Better PC",        desc:"More views per second. (GPU goes BRRR)", baseCost:50,  costMult:1.25, effect:(lvl)=>({ vps: 0.6 * lvl }) },
@@ -1815,8 +2108,8 @@ function formatRate(n){
     { id:"net",     name:"Faster internet",  desc:"Stable stream → more subs per second.",  baseCost:120, costMult:1.28, effect:(lvl)=>({ sps: 0.06 * lvl }) },
     { id:"overlay", name:"Pro overlay",      desc:"More click value (chat is impressed).",  baseCost:90,  costMult:1.26, effect:(lvl)=>({ click: 0.4 * lvl }) },
     { id:"mods",    name:"Chat mods",        desc:"Fewer trolls → more money per second.",  baseCost:220, costMult:1.30, effect:(lvl)=>({ mps: 0.14 * lvl }) },
-    { id:"sponsor", name:"Sponsor deal",     desc:"Subs → money (a bit per second).",       baseCost:500, costMult:1.32, effect:(lvl)=>({ subToMoney: 0.012 * lvl }) },
-    { id:"editor",  name:"Video editor",     desc:"Views → subs (a bit per second).",       baseCost:650, costMult:1.34, effect:(lvl)=>({ viewToSubs: 0.0018 * lvl }) },
+    { id:"sponsor", name:"Sponsor deal",     desc:"Subs → money (a bit per second).",       baseCost:500, costMult:1.32, effect:(lvl)=>({ vps: 0.25 * lvl, subToMoney: 0.012 * lvl }) },
+    { id:"editor",  name:"Video editor",     desc:"Views → subs (a bit per second).",       baseCost:650, costMult:1.34, effect:(lvl)=>({ vps: 0.25 * lvl, viewToSubs: 0.0018 * lvl }) },
   ];
 
   const ACH = [
@@ -2046,7 +2339,7 @@ function renderStatsModal(kind){
     html += section("👀 Views / second",
       lineKV("Direct views/s", formatRate(totalViews)) +
       `<div style="margin-top:10px; color:rgba(234,240,255,.60); font-size:12px;">
-        Tip: Most views/s comes from upgrades like Better PC.
+        Tip: Most views/s comes from upgrades like Better PC and Microphone.
       </div>`
     );
   }
@@ -2116,6 +2409,7 @@ function renderStatsModal(kind){
     if(!canAfford(cost)){ toast("Not enough money."); return; }
     S.money -= cost;
     S.upgrades[id] = (S.upgrades[id] || 0) + 1;
+    questEvent("buy", 1);
     toast(`${def.name} +1`);
     log(`🛒 Bought <strong>${def.name}</strong> (lvl ${S.upgrades[id]})`);
     render();
@@ -2135,7 +2429,7 @@ function renderStatsModal(kind){
     S.views += perClickEvent * mult;
     S.subs  += (baseClick * 0.01) * mult;
     S.money += (baseClick * 0.02) * mult;
-
+    questEvent("click", 1);
     render();
   }
 
@@ -2335,6 +2629,8 @@ $("pillRate").textContent =
     S.lastTick = now();
     if(force) localStorage.setItem(STORAGE_KEY, JSON.stringify(S));
     updateDailyButtonUI();
+    renderQuests();
+    
     
   }
 
@@ -2477,6 +2773,14 @@ $("pillRate").textContent =
     clearTimedEventIfEnded();
     maybeTriggerEvent();
     render(false);
+
+    // refresh quests if day changed
+const qDay = localStorage.getItem(QUEST_DAY_KEY) || "";
+if(qDay !== todayQuestKeyUTC()){
+  DAILY_QUESTS = loadQuests();
+  renderQuests();
+}
+
 
     if (t - (S.lastSave || 0) > 20000){
       localStorage.setItem(STORAGE_KEY, JSON.stringify(S));
@@ -2675,6 +2979,7 @@ $("statsOverlay")?.addEventListener("click", (e) => {
   applyOffline();
   updateSeasonUI();
   render(true);
+  renderQuests();
   checkAchievements();
   loop();
 
@@ -2692,5 +2997,4 @@ $("statsOverlay")?.addEventListener("click", (e) => {
 </script>
 </body>
 </html>
-
 
