@@ -351,6 +351,9 @@
     }
     .stat { cursor: pointer; }
 .stat:hover { border-color: rgba(255,255,255,.18); background: rgba(10,16,34,.45); }
+#pillRate { cursor: pointer; }
+#pillRate:hover { border-color: rgba(255,255,255,.20); background: rgba(255,255,255,.08); }
+
 
 
     .toast{
@@ -1808,7 +1811,7 @@ function formatRate(n){
   // ---------- Game content ----------
   const UPGRADE_DEFS = [
     { id:"pc",      name:"Better PC",        desc:"More views per second. (GPU goes BRRR)", baseCost:50,  costMult:1.25, effect:(lvl)=>({ vps: 0.6 * lvl }) },
-    { id:"mic",      name:"Better Microphone",        desc:"More views per second. (Your Sound getting better)", baseCost:75,  costMult:1.25, effect:(lvl)=>({ vps: 1.0 * lvl }) },
+    { id:"mic",      name:"Better Microphone",        desc:"More views per second. (Your Sound getting better)", baseCost:1,  costMult:1.25, effect:(lvl)=>({ vps: 1.0 * lvl }) },
     { id:"net",     name:"Faster internet",  desc:"Stable stream → more subs per second.",  baseCost:120, costMult:1.28, effect:(lvl)=>({ sps: 0.06 * lvl }) },
     { id:"overlay", name:"Pro overlay",      desc:"More click value (chat is impressed).",  baseCost:90,  costMult:1.26, effect:(lvl)=>({ click: 0.4 * lvl }) },
     { id:"mods",    name:"Chat mods",        desc:"Fewer trolls → more money per second.",  baseCost:220, costMult:1.30, effect:(lvl)=>({ mps: 0.14 * lvl }) },
@@ -1825,6 +1828,48 @@ function formatRate(n){
     { id:"mods_10",title:"Mods lvl 10",           check:(s)=>s.upgrades.mods>=10,reward:"+10% money/s",   apply:(s)=> s._permMoneyMult = (s._permMoneyMult||1)*1.10 },
     { id:"boost",  title:"Use boost once",        check:(s)=>s._usedBoost===true,reward:"+3% all/s",      apply:(s)=> { s._permViewMult=(s._permViewMult||1)*1.03; s._permSubMult=(s._permSubMult||1)*1.03; s._permMoneyMult=(s._permMoneyMult||1)*1.03; } },
     { id:"v_1m",   title:"1M views (legend)",     check:(s)=>s.views>=1_000_000, reward:"+20% clickPower",apply:(s)=> s.clickPower *= 1.20 },
+    // --- Progression achievements ---
+{ id:"v_10k", title:"10K Views", check:s=>s.views>=10_000, reward:"+5% views/s", apply:s=>s._permViewMult=(s._permViewMult||1)*1.05 },
+
+{ id:"s_100", title:"100 Subs", check:s=>s.subs>=100, reward:"+5% subs/s", apply:s=>s._permSubMult=(s._permSubMult||1)*1.05 },
+
+{ id:"first_sponsor", title:"First Sponsor", check:s=>s.upgrades.sponsor>=1, reward:"+10% money/s", apply:s=>s._permMoneyMult=(s._permMoneyMult||1)*1.10 },
+
+{ id:"first_prestige", title:"First Prestige", check:()=>loadPrestige().totalPrestiges>=1, reward:"+10% all/s", apply:s=>{
+  s._permViewMult=(s._permViewMult||1)*1.1;
+  s._permSubMult=(s._permSubMult||1)*1.1;
+  s._permMoneyMult=(s._permMoneyMult||1)*1.1;
+}},
+
+// --- Midgame ---
+{ id:"m_1m", title:"1M Money", check:s=>s.money>=1_000_000, reward:"+15% money/s", apply:s=>s._permMoneyMult=(s._permMoneyMult||1)*1.15 },
+
+{ id:"v_10m", title:"10M Views", check:s=>s.views>=10_000_000, reward:"+15% views/s", apply:s=>s._permViewMult=(s._permViewMult||1)*1.15 },
+
+{ id:"all_10", title:"All upgrades lvl 10", check:s=>Object.values(s.upgrades).every(l=>l>=10),
+  reward:"+10% all/s", apply:s=>{
+    s._permViewMult=(s._permViewMult||1)*1.1;
+    s._permSubMult=(s._permSubMult||1)*1.1;
+    s._permMoneyMult=(s._permMoneyMult||1)*1.1;
+}},
+
+{ id:"streak_7", title:"7-Day Streak", check:()=>loadStreak().streak>=7, reward:"+5% all/s", apply:s=>{
+  s._permViewMult=(s._permViewMult||1)*1.05;
+  s._permSubMult=(s._permSubMult||1)*1.05;
+  s._permMoneyMult=(s._permMoneyMult||1)*1.05;
+}},
+
+// --- Endgame ---
+{ id:"v_100m", title:"100M Views", check:s=>s.views>=100_000_000, reward:"+25% views/s", apply:s=>s._permViewMult=(s._permViewMult||1)*1.25 },
+
+{ id:"m_1b", title:"1B Money", check:s=>s.money>=1_000_000_000, reward:"+25% money/s", apply:s=>s._permMoneyMult=(s._permMoneyMult||1)*1.25 },
+
+{ id:"prestige_10", title:"Prestige lvl 10", check:()=>loadPrestige().sp>=10, reward:"+20% all/s", apply:s=>{
+  s._permViewMult=(s._permViewMult||1)*1.2;
+  s._permSubMult=(s._permSubMult||1)*1.2;
+  s._permMoneyMult=(s._permMoneyMult||1)*1.2;
+}},
+
   ];
 
   // ---------- Economy ----------
@@ -1981,42 +2026,80 @@ function renderStatsModal(kind){
 
   // Totals (viktig: subs/money totals må inkludere konverteringene)
   const totalViews = t.vps;
+
   const subsFromViews = t.subsFromViewsPerSec;
   const totalSubs = t.sps + subsFromViews;
 
   const moneyFromSubs = t.moneyFromSubsPerSec;
   const totalMoney = t.mps + moneyFromSubs;
 
+  const section = (title, rowsHtml) => `
+    <div style="border:1px solid rgba(255,255,255,.10); background:rgba(10,16,34,.28); border-radius:18px; padding:12px; margin-bottom:10px;">
+      <div style="font-weight:900; margin-bottom:8px;">${title}</div>
+      ${rowsHtml}
+    </div>
+  `;
+
   let html = "";
 
   if(kind === "views"){
-    html += `<div style="font-weight:900; margin-bottom:8px;">👀 Views / second</div>`;
-    html += lineKV("Direct views/s", formatRate(totalViews));
-    html += `<div style="margin-top:10px; color:rgba(234,240,255,.60); font-size:12px;">
-      Tip: Most views/s comes from upgrades like Better PC.
-    </div>`;
+    html += section("👀 Views / second",
+      lineKV("Direct views/s", formatRate(totalViews)) +
+      `<div style="margin-top:10px; color:rgba(234,240,255,.60); font-size:12px;">
+        Tip: Most views/s comes from upgrades like Better PC.
+      </div>`
+    );
   }
 
   if(kind === "subs"){
-    html += `<div style="font-weight:900; margin-bottom:8px;">👥 Subs / second</div>`;
-    html += lineKV("Direct subs/s", formatRate(t.sps));
-    html += lineKV("From views → subs", formatRate(subsFromViews));
-    html += `<div style="height:8px;"></div>`;
-    html += lineKV("Total subs/s", `<span style="color:var(--good)">${formatRate(totalSubs)}</span>`);
+    html += section("👥 Subs / second",
+      lineKV("Direct subs/s", formatRate(t.sps)) +
+      lineKV("From views → subs", formatRate(subsFromViews)) +
+      `<div style="height:8px;"></div>` +
+      lineKV("Total subs/s", `<span style="color:var(--good)">${formatRate(totalSubs)}</span>`)
+    );
   }
 
   if(kind === "money"){
-    html += `<div style="font-weight:900; margin-bottom:8px;">💰 Money / second</div>`;
-    html += lineKV("Direct money/s", formatRate(t.mps));
-    html += lineKV("From subs → money", formatRate(moneyFromSubs));
-    html += `<div style="height:8px;"></div>`;
-    html += lineKV("Total money/s", `<span style="color:var(--good)">${formatRate(totalMoney)}</span>`);
+    html += section("💰 Money / second",
+      lineKV("Direct money/s", formatRate(t.mps)) +
+      lineKV("From subs → money", formatRate(moneyFromSubs)) +
+      `<div style="height:8px;"></div>` +
+      lineKV("Total money/s", `<span style="color:var(--good)">${formatRate(totalMoney)}</span>`)
+    );
   }
 
-  // Sett inn i modal
+  if(kind === "all"){
+    html += section("👀 Views / second",
+      lineKV("Direct views/s", formatRate(totalViews))
+    );
+
+    html += section("👥 Subs / second",
+      lineKV("Direct subs/s", formatRate(t.sps)) +
+      lineKV("From views → subs", formatRate(subsFromViews)) +
+      `<div style="height:8px;"></div>` +
+      lineKV("Total subs/s", `<span style="color:var(--good)">${formatRate(totalSubs)}</span>`)
+    );
+
+    html += section("💰 Money / second",
+      lineKV("Direct money/s", formatRate(t.mps)) +
+      lineKV("From subs → money", formatRate(moneyFromSubs)) +
+      `<div style="height:8px;"></div>` +
+      lineKV("Total money/s", `<span style="color:var(--good)">${formatRate(totalMoney)}</span>`)
+    );
+
+    // liten oppsummering på slutten
+    html += `
+      <div class="pill" style="justify-content:center; margin-top:6px;">
+        Totals: V ${formatRate(totalViews)}/s · S ${formatRate(totalSubs)}/s · $ ${formatRate(totalMoney)}/s
+      </div>
+    `;
+  }
+
   const body = $("statsBody");
   if(body) body.innerHTML = html;
 }
+
 
 
 
@@ -2435,6 +2518,11 @@ $("pillRate").textContent =
   });
 
   $("btnClick")?.addEventListener("click", click);
+  $("pillRate")?.addEventListener("click", () => {
+  renderStatsModal("all");
+  openStatsOverlay();
+});
+
   $("btnPrestige")?.addEventListener("click", doPrestige);
   $("btnDaily")?.addEventListener("click", claimDaily);
 
@@ -2562,6 +2650,7 @@ $("statsOverlay")?.addEventListener("click", (e) => {
     closeSeasonOverlay();
     closeLegalOverlay();
     closeStatsOverlay();
+    
 
   });
 
@@ -2603,6 +2692,4 @@ $("statsOverlay")?.addEventListener("click", (e) => {
 </script>
 </body>
 </html>
-
-
 
