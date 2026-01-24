@@ -2108,16 +2108,93 @@ if(pill) pill.textContent = `${claimedCount} / ${DAILY_QUESTS.length}`;
 }
 
 
-  // ---------- Game content ----------
-  const UPGRADE_DEFS = [
-    { id:"pc",      name:"Better PC",        desc:"More views per second. (GPU goes BRRR)", baseCost:50,  costMult:1.25, effect:(lvl)=>({ vps: 0.6 * lvl }) },
-    { id:"mic",      name:"Better Microphone",        desc:"More views per second. (Your Sound getting better)", baseCost:45,  costMult:1.25, effect:(lvl)=>({ vps: 1.0 * lvl }) },
-    { id:"net",     name:"Faster internet",  desc:"Stable stream → more subs per second.",  baseCost:120, costMult:1.28, effect:(lvl)=>({ sps: 0.06 * lvl }) },
-    { id:"overlay", name:"Pro overlay",      desc:"More click value (chat is impressed).",  baseCost:90,  costMult:1.26, effect:(lvl)=>({ click: 0.4 * lvl }) },
-    { id:"mods",    name:"Chat mods",        desc:"Fewer trolls → more money per second.",  baseCost:220, costMult:1.30, effect:(lvl)=>({ mps: 0.14 * lvl }) },
-    { id:"sponsor", name:"Sponsor deal",     desc:"Subs → money (a bit per second).",       baseCost:500, costMult:1.32, effect:(lvl)=>({ vps: 0.60 * lvl, subToMoney: 0.012 * lvl }) },
-    { id:"editor",  name:"Video editor",     desc:"Views → subs (a bit per second).",       baseCost:650, costMult:1.34, effect:(lvl)=>({ vps: 0.60 * lvl, viewToSubs: 0.0018 * lvl }) },
-  ];
+// ---------- Game content ----------
+const UPGRADE_DEFS = [
+  // MAIN views engines (scaler bedre i late game)
+  {
+    id:"pc",
+    name:"Better PC",
+    desc:"More views per second. (GPU goes BRRR)",
+    baseCost:50,
+    costMult:1.25,
+    effect:(lvl)=>({ vps: 0.55 * Math.pow(lvl, 1.17) })
+  },
+  {
+    id:"mic",
+    name:"Better Microphone",
+    desc:"More views per second. (Your sound gets better)",
+    baseCost:45,
+    costMult:1.25,
+    effect:(lvl)=>({ vps: 0.85 * Math.pow(lvl, 1.14) })
+  },
+
+  // SUPPORT upgrades (gir litt views også)
+  {
+    id:"net",
+    name:"Faster internet",
+    desc:"Stable stream → more subs per second.",
+    baseCost:120,
+    costMult:1.28,
+    effect:(lvl)=>({
+      sps: 0.07 * lvl,
+      vps: 0.15 * lvl
+    })
+  },
+  {
+    id:"overlay",
+    name:"Pro overlay",
+    desc:"More click value (chat is impressed).",
+    baseCost:90,
+    costMult:1.26,
+    effect:(lvl)=>({
+      // NOTE: click håndteres i click() hos deg, men dette er ok å la stå
+      click: 0.4 * lvl,
+      // liten passiv views bonus også
+      vps: 0.08 * lvl
+    })
+  },
+  {
+    id:"mods",
+    name:"Chat mods",
+    desc:"Fewer trolls → more money per second.",
+    baseCost:220,
+    costMult:1.30,
+    effect:(lvl)=>({
+      mps: 0.16 * lvl,
+      // litt views fordi streamen flyter bedre
+      vps: 0.10 * lvl
+    })
+  },
+
+  // CONVERTERS + litt direkte views
+  {
+    id:"sponsor",
+    name:"Sponsor deal",
+    desc:"Subs → money (a bit per second).",
+    baseCost:500,
+    costMult:1.32,
+    effect:(lvl)=>({
+      // liten men merkbar views bonus
+      vps: 0.35 * lvl,
+      // viktig: konvertering
+      subToMoney: 0.014 * lvl
+    })
+  },
+  {
+    id:"editor",
+    name:"Video editor",
+    desc:"Views → subs (a bit per second).",
+    baseCost:650,
+    costMult:1.34,
+    effect:(lvl)=>({
+      // liten men merkbar views bonus
+      vps: 0.30 * lvl,
+      // viktig: konvertering
+      viewToSubs: 0.0022 * lvl
+    })
+  },
+];
+
 
   const ACH = [
     { id:"v_1k",   title:"First 1k views",        check:(s)=>s.views>=1000,      reward:"+5% clickPower", apply:(s)=> s.clickPower *= 1.05 },
@@ -2173,6 +2250,14 @@ if(pill) pill.textContent = `${claimedCount} / ${DAILY_QUESTS.length}`;
   ];
 
   // ---------- Economy ----------
+  function momentumMult(){
+  const u = S.upgrades || {};
+  const totalLvl =
+    (u.pc||0) + (u.mic||0) + (u.net||0) + (u.overlay||0) + (u.mods||0) + (u.sponsor||0) + (u.editor||0);
+
+  return 1 + Math.log10(totalLvl + 1) * 0.25; // juster 0.25 om du vil mer/mindre
+}
+
   function calcRates(){
     const lvl = (id) => S.upgrades[id] || 0;
 
@@ -2195,6 +2280,11 @@ if(pill) pill.textContent = `${claimedCount} / ${DAILY_QUESTS.length}`;
     vps *= viewMult;
     sps *= subMult;
     mps *= moneyMult;
+    const mm = momentumMult();
+vps *= mm;
+sps *= mm;
+mps *= mm;
+
 
     // Prestige multiplier
     const pMult = prestigeMult();
