@@ -3240,11 +3240,12 @@ $("achTabLocked")?.addEventListener("click", () => { ACH_TAB = "locked"; updateA
 $("achTabUnlocked")?.addEventListener("click", () => { ACH_TAB = "unlocked"; updateAchTabUI(); });
 
 
-    // Legal buttons
-  $("btnLegalAbout")?.addEventListener("click", () => { setLegalContent("about"); openLegalOverlay(); });
-  $("btnLegalPrivacy")?.addEventListener("click", () => { setLegalContent("privacy"); openLegalOverlay(); });
-  $("btnLegalTerms")?.addEventListener("click", () => { setLegalContent("terms"); openLegalOverlay(); });
-  $("btnLegalContact")?.addEventListener("click", () => { setLegalContent("contact"); openLegalOverlay(); });
+// Replace modal policy with real pages (recommended)
+$("btnLegalAbout")?.addEventListener("click", () => window.location.href = "about.html");
+$("btnLegalPrivacy")?.addEventListener("click", () => window.location.href = "privacy-policy.html");
+$("btnLegalTerms")?.addEventListener("click", () => window.location.href = "terms.html");
+$("btnLegalContact")?.addEventListener("click", () => window.location.href = "contact.html");
+
 
 
   $("btnCloseLegal")?.addEventListener("click", closeLegalOverlay);
