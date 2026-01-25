@@ -559,13 +559,21 @@
           <div class="shop" id="shop"></div>
         </div>
 
-        <div class="card">
-          <div class="section-title">
-            <h2>Achievements</h2>
-            <div class="pill" id="pillAch">0 / 8</div>
-          </div>
-          <div class="log" id="achList"></div>
-        </div>
+<div class="card">
+  <div class="section-title">
+    <h2>Achievements</h2>
+
+    <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; justify-content:flex-end;">
+      <button id="achTabLocked" class="btn-primary" style="padding:7px 10px; border-radius:999px;">Locked</button>
+      <button id="achTabUnlocked" style="padding:7px 10px; border-radius:999px;">Unlocked</button>
+      <div class="pill" id="pillAch">0 / 0</div>
+    </div>
+  </div>
+
+  <div class="log" id="achLocked"></div>
+  <div class="log" id="achUnlocked" style="display:none;"></div>
+</div>
+
 
         <div class="card">
           <div class="section-title">
@@ -2566,18 +2574,31 @@ function renderStatsModal(kind){
   }
 
   // ---------- Achievements ----------
-  function buildAchievements(){
-    const el = $("achList");
-    if(!el) return;
-    el.innerHTML = "";
-    for (const a of ACH){
-      const div = document.createElement("div");
-      div.className = "entry";
-      div.id = "ach_" + a.id;
-      div.innerHTML = `🏆 <strong>${a.title}</strong><br/><span style="color:var(--muted)">${a.reward}</span>`;
-      el.appendChild(div);
-    }
+let ACH_TAB = "locked"; // "locked" | "unlocked"
+
+function buildAchievements(){
+  const lockedEl = $("achLocked");
+  const unlockedEl = $("achUnlocked");
+  if(!lockedEl || !unlockedEl) return;
+
+  lockedEl.innerHTML = "";
+  unlockedEl.innerHTML = "";
+
+  for (const a of ACH){
+    const got = !!S.achievements[a.id];
+
+    const div = document.createElement("div");
+    div.className = "entry";
+    div.id = "ach_" + a.id;
+    div.innerHTML = `🏆 <strong>${a.title}</strong><br/><span style="color:var(--muted)">${a.reward}</span>`;
+
+    if(got) unlockedEl.appendChild(div);
+    else lockedEl.appendChild(div);
   }
+
+  updateAchTabUI();
+}
+
 
   function checkAchievements(){
     let changed = false;
@@ -2585,6 +2606,7 @@ function renderStatsModal(kind){
       if (S.achievements[a.id]) continue;
       if (a.check(S)){
         S.achievements[a.id] = true;
+        buildAchievements(); // flytter den fra locked → unlocked
         try{ a.apply(S); }catch{}
         changed = true;
         toast(`Achievement: ${a.title}`);
@@ -2918,11 +2940,37 @@ if(qDay !== todayQuestKeyUTC()){
   }
 
   // ---------- Wire up events ----------
+
+function updateAchTabUI(){
+  const lockedEl = $("achLocked");
+  const unlockedEl = $("achUnlocked");
+  const bLocked = $("achTabLocked");
+  const bUnlocked = $("achTabUnlocked");
+  if(!lockedEl || !unlockedEl || !bLocked || !bUnlocked) return;
+
+  const showLocked = (ACH_TAB === "locked");
+  lockedEl.style.display = showLocked ? "flex" : "none";
+  unlockedEl.style.display = showLocked ? "none" : "flex";
+
+  if(showLocked){
+    bLocked.classList.add("btn-primary");
+    bUnlocked.classList.remove("btn-primary");
+  }else{
+    bUnlocked.classList.add("btn-primary");
+    bLocked.classList.remove("btn-primary");
+  }
+}
+
+$("achTabLocked")?.addEventListener("click", () => { ACH_TAB = "locked"; updateAchTabUI(); });
+$("achTabUnlocked")?.addEventListener("click", () => { ACH_TAB = "unlocked"; updateAchTabUI(); });
+
+
     // Legal buttons
   $("btnLegalAbout")?.addEventListener("click", () => { setLegalContent("about"); openLegalOverlay(); });
   $("btnLegalPrivacy")?.addEventListener("click", () => { setLegalContent("privacy"); openLegalOverlay(); });
   $("btnLegalTerms")?.addEventListener("click", () => { setLegalContent("terms"); openLegalOverlay(); });
   $("btnLegalContact")?.addEventListener("click", () => { setLegalContent("contact"); openLegalOverlay(); });
+
 
   $("btnCloseLegal")?.addEventListener("click", closeLegalOverlay);
   $("legalOverlay")?.addEventListener("click", (e) => {
