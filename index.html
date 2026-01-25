@@ -1192,6 +1192,20 @@ const QUEST_DAY_KEY = "streamer_idle_daily_quests_day";  // YYYY-M-D (UTC)
   // ---------- Load / Save ----------
   let S = load();
   window.S = S;
+  // --- Init base multipliers (so pshop can stack without nuking achievements) ---
+S._permViewMult  = Number(S._permViewMult  || 1);
+S._permSubMult   = Number(S._permSubMult   || 1);
+S._permMoneyMult = Number(S._permMoneyMult || 1);
+
+// base = achievements/permanent baseline, pshop will multiply on top
+S._permViewMult_base  = Number(S._permViewMult_base  || S._permViewMult);
+S._permSubMult_base   = Number(S._permSubMult_base   || S._permSubMult);
+S._permMoneyMult_base = Number(S._permMoneyMult_base || S._permMoneyMult);
+
+// Run id (increments on prestige) -> for one-time run start bonuses
+S._runId = Number(S._runId || 0);
+S._startBonusRunIdApplied = Number(S._startBonusRunIdApplied || -1);
+
 
   function load(){
     try{
@@ -1299,7 +1313,13 @@ function doPrestige(){
   buildShop();
   updateSPUI();
   buildPrestigeShop();
+  // new run id -> allow start bonuses once
+S._runId = Number(S._runId || 0) + 1;
+S._startBonusRunIdApplied = -1; // allow apply once for new run
+
+  applyRunStartBonusesOnce();
   render(true);
+  
 
   alert(`Prestige complete!\n+${gain} SP\nTotal SP: ${p.sp}`);
 }
@@ -1317,18 +1337,33 @@ function savePShop(ps){
 S.pShop = S.pShop || loadPShop(); // safe
 
 const PSHOP_DEFS = [
+  // Income (permanent)
   { id:"pv", name:"Permanent Views", desc:"+5% views/s per level", baseCost:1, costMult:1.45,
-    apply:(lvl)=> { S._permViewMult = 1 * Math.pow(1.05, lvl); } },
+    apply:(lvl)=> { S._pshopViewMult = Math.pow(1.05, lvl); } },
 
   { id:"ps", name:"Permanent Subs", desc:"+5% subs/s per level", baseCost:1, costMult:1.50,
-    apply:(lvl)=> { S._permSubMult = 1 * Math.pow(1.05, lvl); } },
+    apply:(lvl)=> { S._pshopSubMult = Math.pow(1.05, lvl); } },
 
   { id:"pm", name:"Permanent Money", desc:"+5% money/s per level", baseCost:1, costMult:1.55,
-    apply:(lvl)=> { S._permMoneyMult = 1 * Math.pow(1.05, lvl); } },
+    apply:(lvl)=> { S._pshopMoneyMult = Math.pow(1.05, lvl); } },
 
+  // Click scaling
   { id:"pclick", name:"Permanent Click", desc:"+3% clickPower per level", baseCost:2, costMult:1.60,
-    apply:(lvl)=> { S.clickPower = 1 * Math.pow(1.03, lvl); } },
+    apply:(lvl)=> { S._pshopClickMult = Math.pow(1.03, lvl); } },
+
+  // Offline gains
+  { id:"poff", name:"Offline Boost", desc:"+15% offline gains per level", baseCost:3, costMult:1.65,
+    apply:(lvl)=> { S._pshopOfflineMult = 1 + (0.15 * lvl); } },
+
+  // Run start bonus (one-time per run)
+  { id:"pstart", name:"Starter Kit", desc:"+$250 and +2K views at run start per level", baseCost:4, costMult:1.70,
+    apply:(lvl)=> { S._pshopStartLvl = lvl; } },
+
+  // Quest rewards multiplier
+  { id:"pquest", name:"Quest Booster", desc:"+10% quest rewards per level", baseCost:3, costMult:1.60,
+    apply:(lvl)=> { S._pshopQuestMult = Math.pow(1.10, lvl); } },
 ];
+
 
 function pshopCost(def){
   const lvl = Number(S.pShop?.[def.id] || 0);
@@ -1336,21 +1371,51 @@ function pshopCost(def){
 }
 
 function pshopRecalcAll(){
-  // Resetter til base, så re-apply fra shop levels
-  S._permViewMult = 1 * (S._permViewMult_base || 1);
-  S._permSubMult = 1 * (S._permSubMult_base || 1);
-  S._permMoneyMult = 1 * (S._permMoneyMult_base || 1);
-
-  // clickPower base = 1 (du kan endre base senere)
-  const pclick = Number(S.pShop?.pclick || 0);
-  S.clickPower = 1 * Math.pow(1.03, pclick);
+  // reset pshop layer
+  S._pshopViewMult = 1;
+  S._pshopSubMult = 1;
+  S._pshopMoneyMult = 1;
+  S._pshopClickMult = 1;
+  S._pshopOfflineMult = 1;
+  S._pshopQuestMult = 1;
+  S._pshopStartLvl = 0;
 
   for(const def of PSHOP_DEFS){
     const lvl = Number(S.pShop?.[def.id] || 0);
-    if(def.id === "pclick") continue;
     def.apply(lvl);
   }
+
+  // Apply clickPower baseline (achievements may have modified S.clickPower historically, so keep it stable)
+  // We'll compute click in click() using clickPower * _pshopClickMult instead of overriding clickPower itself.
 }
+
+function offlineMult(){
+  return Number(S._pshopOfflineMult || 1);
+}
+function questRewardMult(){
+  return Number(S._pshopQuestMult || 1);
+}
+function runStartBonus(){
+  const lvl = Number(S._pshopStartLvl || 0);
+  return {
+    money: 250 * lvl,
+    views: 2000 * lvl
+  };
+}
+function applyRunStartBonusesOnce(){
+  if(S._startBonusRunIdApplied === S._runId) return;
+  const b = runStartBonus();
+  if(b.money || b.views){
+    S.money += b.money;
+    S.views += b.views;
+    log(`🎒 <strong>Starter Kit</strong> — +${fmt(b.views)} views, +${fmt(b.money)} money`);
+    toast(`Starter Kit: +${fmt(b.views)} views, +${fmt(b.money)} money`);
+  }
+  S._startBonusRunIdApplied = S._runId;
+}
+
+
+
 
 function pshopBuy(id){
   const def = PSHOP_DEFS.find(x => x.id === id);
@@ -2163,7 +2228,21 @@ function claimQuest(id){
   }
 
   st.claimed = true;
-  try{ def.reward(); }catch{}
+  try{
+  const beforeMoney = S.money;
+  const beforeViews = S.views;
+
+  def.reward();
+
+  // If reward added money/views, scale it
+  const mult = questRewardMult();
+  const dMoney = S.money - beforeMoney;
+  const dViews = S.views - beforeViews;
+
+  if(dMoney > 0) S.money = beforeMoney + (dMoney * mult);
+  if(dViews > 0) S.views = beforeViews + (dViews * mult);
+} catch {}
+
   saveQuests(DAILY_QUESTS);
   toast(`✅ Quest claimed: ${def.rewardText}`);
   render(true);
@@ -2252,15 +2331,7 @@ if(pill) pill.textContent = `${claimedCount} / ${DAILY_QUESTS.length}`;
 // ---------- Game content ----------
 const UPGRADE_DEFS = [
   // MAIN views engines (scaler bedre i late game)
-  {
-    id:"pc",
-    name:"Better PC",
-    desc:"More views per second. (GPU goes BRRR)",
-    baseCost:50,
-    costMult:1.25,
-    effect:(lvl)=>({ vps: 0.55 * Math.pow(lvl, 1.17) })
-  },
-  {
+    {
     id:"mic",
     name:"Better Microphone",
     desc:"More views per second. (Your sound gets better)",
@@ -2268,18 +2339,13 @@ const UPGRADE_DEFS = [
     costMult:1.25,
     effect:(lvl)=>({ mps: 0.16 * lvl, vps: 0.85 * Math.pow(lvl, 1.14) })
   },
-
-  // SUPPORT upgrades (gir litt views også)
   {
-    id:"net",
-    name:"Faster internet",
-    desc:"Stable stream → more subs per second.",
-    baseCost:120,
-    costMult:1.28,
-    effect:(lvl)=>({
-      sps: 0.07 * lvl,
-      vps: 0.15 * lvl
-    })
+    id:"pc",
+    name:"Better PC",
+    desc:"More views per second. (GPU goes BRRR)",
+    baseCost:50,
+    costMult:1.25,
+    effect:(lvl)=>({ vps: 0.55 * Math.pow(lvl, 1.17) })
   },
   {
     id:"overlay",
@@ -2292,6 +2358,18 @@ const UPGRADE_DEFS = [
       click: 0.4 * lvl,
       // liten passiv views bonus også
       vps: 0.08 * lvl
+    })
+  },
+    // SUPPORT upgrades (gir litt views også)
+  {
+    id:"net",
+    name:"Faster internet",
+    desc:"Stable stream → more subs per second.",
+    baseCost:120,
+    costMult:1.28,
+    effect:(lvl)=>({
+      sps: 0.07 * lvl,
+      vps: 0.15 * lvl
     })
   },
   {
@@ -2415,9 +2493,10 @@ const UPGRADE_DEFS = [
       viewToSubs += eff.viewToSubs || 0;
     }
 
-    const viewMult  = S._permViewMult  || 1;
-    const subMult   = S._permSubMult   || 1;
-    const moneyMult = S._permMoneyMult || 1;
+const viewMult  = (S._permViewMult_base  || 1) * (S._pshopViewMult  || 1);
+const subMult   = (S._permSubMult_base   || 1) * (S._pshopSubMult   || 1);
+const moneyMult = (S._permMoneyMult_base || 1) * (S._pshopMoneyMult || 1);
+
 
     vps *= viewMult;
     sps *= subMult;
@@ -2657,7 +2736,7 @@ function renderStatsModal(kind){
   function click(){
     const r = calcRates();
     const overlayLvl = S.upgrades.overlay || 0;
-    const baseClick = (S.clickPower || 1) + overlayLvl * 0.4;
+    const baseClick = ((S.clickPower || 1) * (S._pshopClickMult || 1)) + overlayLvl * 0.4;
 
     const ev = getActiveMults();
     const perClickEvent = baseClick * (ev.click || 1);
@@ -2678,14 +2757,16 @@ function renderStatsModal(kind){
     const elapsedMs = Math.max(0, tNow - (S.lastTick || tNow));
     const elapsedSec = Math.min(12 * 3600, Math.floor(elapsedMs / 1000));
     if(elapsedSec <= 2) return;
+const r = calcRates();
+const offM = offlineMult();
+const gainedViews = r.vps * elapsedSec * offM;
+const gainedSubs  = r.sps * elapsedSec * offM;
+const gainedMoney = r.mps * elapsedSec * offM;
 
-    const r = calcRates();
-    const gainedViews = r.vps * elapsedSec;
-    const gainedSubs  = r.sps * elapsedSec;
-    const gainedMoney = r.mps * elapsedSec;
 
-    const extraSubsFromViews = r.viewToSubs * S.views * (elapsedSec/60);
-    const extraMoneyFromSubs = r.subToMoney * S.subs  * (elapsedSec/60);
+const extraSubsFromViews = r.viewToSubs * S.views * (elapsedSec/60) * offM;
+const extraMoneyFromSubs = r.subToMoney * S.subs  * (elapsedSec/60) * offM;
+
 
     S.views += gainedViews;
     S.subs  += gainedSubs + extraSubsFromViews;
@@ -2884,15 +2965,24 @@ $("sp").textContent = fmt(p.sp || 0);
 
 
     // prestige button
-    $("btnPrestige").textContent = canPrestige()
-      ? `✨ Prestige (+${calcPrestigeGain()} SP)`
-      : `✨ Prestige (${fmt(PRESTIGE_UNLOCK_VIEWS)} views)`;
+if(canPrestige()){
+  const gain = calcPrestigeGain();
+  const p = loadPrestige();
+  const nextSp = (p.sp || 0) + gain;
+  const nextMult = 1 + (nextSp * 0.05);
+  $("btnPrestige").textContent = `✨ Prestige (+${gain} SP · next run x${nextMult.toFixed(2)})`;
+}else{
+  $("btnPrestige").textContent = `✨ Prestige (${fmt(PRESTIGE_UNLOCK_VIEWS)} views)`;
+}
+
     $("btnPrestige").disabled = !canPrestige();
 
 
     // click pill
     const overlayLvl = S.upgrades.overlay || 0;
-    $("pillClick").textContent = `Click: +${(((S.clickPower||1) + overlayLvl*0.4)).toFixed(1).replace(/\.0$/,"")}`;
+    $("pillClick").textContent =
+  `Click: +${((((S.clickPower||1) * (S._pshopClickMult||1)) + overlayLvl*0.4)).toFixed(1).replace(/\.0$/,"")}`;
+
 
     // boost pill
     const left = Math.max(0, Math.ceil(((S.boostUntil || 0) - now()) / 1000));
@@ -3320,12 +3410,13 @@ $("statsOverlay")?.addEventListener("click", (e) => {
   restoreEventSchedule();
   applyOffline();
   updateSeasonUI();
+  pshopRecalcAll();
+  buildPrestigeShop();
+  applyRunStartBonusesOnce();
   render(true);
   renderQuests();
   checkAchievements();
   loop();
-  pshopRecalcAll();
-  buildPrestigeShop();
 
   // Show help first time
   if(!localStorage.getItem(HELP_KEY)){
