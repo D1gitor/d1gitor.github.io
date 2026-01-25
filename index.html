@@ -411,6 +411,7 @@
 
       <div class="top-actions">
         <button id="btnPrestige">✨ Prestige</button>
+        <button id="btnPrestigeShop">✨ Shop</button>
         <button id="btnDaily">🎁 Daily</button>
         <button id="btnLB">🏆 Leaderboard</button>
         <button id="btnSeason">📅 Season</button>
@@ -460,6 +461,11 @@
     <div class="value" id="money">0</div>
     <div class="subline" id="mps">+0 per second</div>
   </div>
+  <div class="stat" id="statSP">
+  <div class="label">SP</div>
+  <div class="value" id="sp">0</div>
+  <div class="subline" id="spinfo">Prestige points</div>
+</div>
 </div>
 
 
@@ -899,6 +905,28 @@
   </div>
 </div>
 
+<!-- Prestige Shop modal -->
+<div id="pShopOverlay" class="modal-overlay">
+  <div class="modal-card">
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:10px;">
+      <div style="font-weight:900; font-size:16px;">✨ Prestige Shop</div>
+      <button id="btnClosePShop" class="btn-bad" style="padding:8px 10px;">✕</button>
+    </div>
+
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:12px;">
+      <div class="pill">SP: <strong id="pShopSP">0</strong></div>
+      <div style="color:rgba(234,240,255,.65); font-size:12px;">Spend SP on permanent bonuses.</div>
+    </div>
+
+    <div class="shop" id="pShopList"></div>
+
+    <div style="text-align:right; font-size:11px; color:var(--muted); margin-top:10px;">
+      Press ESC to close
+    </div>
+  </div>
+</div>
+
+
 
 
   <!-- Event popup -->
@@ -1143,9 +1171,6 @@ const QUEST_DAY_KEY = "streamer_idle_daily_quests_day";  // YYYY-M-D (UTC)
     subs: 0,
     money: 0,
 
-      // 🔁 Prestige
-    prestigePoints: 0,   // totale SP
-    prestigeCount: 0,    // hvor mange ganger man har prestiga
 
     clickPower: 1,
     upgrades: { pc:0, mic:0, net:0, overlay:0, mods:0, sponsor:0, editor:0 },
@@ -1217,6 +1242,18 @@ const QUEST_DAY_KEY = "streamer_idle_daily_quests_day";  // YYYY-M-D (UTC)
   function savePrestige(p){
     localStorage.setItem(PRESTIGE_KEY, JSON.stringify(p));
   }
+  function updateSPUI(){
+  const p = loadPrestige();
+  const spEl = $("sp");
+  if(spEl) spEl.textContent = fmt(p.sp || 0);
+
+  const spShopEl = $("pShopSP");
+  if(spShopEl) spShopEl.textContent = fmt(p.sp || 0);
+
+  const lbEl = $("lbMyPrestige");
+  if(lbEl) lbEl.textContent = fmt(p.sp || 0);
+}
+
   function calcPrestigeGain(){
     return Math.floor(Math.sqrt((S.views || 0) / 1000));
   }
@@ -1227,31 +1264,126 @@ const QUEST_DAY_KEY = "streamer_idle_daily_quests_day";  // YYYY-M-D (UTC)
   function canPrestige(){
     return (S.views || 0) >= PRESTIGE_UNLOCK_VIEWS;
   }
-  function doPrestige(){
-  if (S.views < 500_000) {
-    alert("You need at least 500K views to Prestige.");
+function doPrestige(){
+  if(!canPrestige()){
+    alert(`You need at least ${fmt(PRESTIGE_UNLOCK_VIEWS)} views to Prestige.`);
     return;
   }
 
-  // SP-formel
-  const gainedSP = Math.floor(S.views / 500_000);
+  const gain = calcPrestigeGain();
+  if(gain <= 0){
+    alert("No SP gained yet. Get more views first 🙂");
+    return;
+  }
 
-  if (!confirm(`Prestige now?\n\nYou will gain ${gainedSP} Prestige Points.`)) return;
+  const ok = confirm(`Prestige now?\n\nYou will gain +${gain} SP\nThis resets views/subs/money and upgrades.`);
+  if(!ok) return;
 
-  // Gi SP
-  S.prestigePoints = (S.prestigePoints || 0) + gainedSP;
-  S.prestige = (S.prestige || 0) + 1;
+  // ✅ legg SP i PRESTIGE_KEY (samme som UI + shop bruker)
+  const p = loadPrestige();
+  p.sp = Number(p.sp || 0) + gain;
+  p.totalPrestiges = Number(p.totalPrestiges || 0) + 1;
+  savePrestige(p);
 
-  // Reset run
+  // reset run
   S.views = 0;
   S.subs = 0;
   S.money = 0;
-  S.upgrades = {};
+  S.upgrades = structuredClone(DEFAULT.upgrades);
+  S.boostUntil = 0;
 
-  save();
+  // quests
+  questEvent("prestige", 1);
+
+  // oppdater UI
+  buildShop();
+  updateSPUI();
+  buildPrestigeShop();
   render(true);
 
-  alert(`Prestige complete!\n+${gainedSP} Prestige Points`);
+  alert(`Prestige complete!\n+${gain} SP\nTotal SP: ${p.sp}`);
+}
+
+const PSHOP_KEY = "streamer_idle_prestige_shop_v1";
+
+function loadPShop(){
+  try{ return JSON.parse(localStorage.getItem(PSHOP_KEY) || "{}"); }
+  catch{ return {}; }
+}
+function savePShop(ps){
+  try{ localStorage.setItem(PSHOP_KEY, JSON.stringify(ps)); }catch{}
+}
+
+S.pShop = S.pShop || loadPShop(); // safe
+
+const PSHOP_DEFS = [
+  { id:"pv", name:"Permanent Views", desc:"+5% views/s per level", baseCost:1, costMult:1.45,
+    apply:(lvl)=> { S._permViewMult = 1 * Math.pow(1.05, lvl); } },
+
+  { id:"ps", name:"Permanent Subs", desc:"+5% subs/s per level", baseCost:1, costMult:1.50,
+    apply:(lvl)=> { S._permSubMult = 1 * Math.pow(1.05, lvl); } },
+
+  { id:"pm", name:"Permanent Money", desc:"+5% money/s per level", baseCost:1, costMult:1.55,
+    apply:(lvl)=> { S._permMoneyMult = 1 * Math.pow(1.05, lvl); } },
+
+  { id:"pclick", name:"Permanent Click", desc:"+3% clickPower per level", baseCost:2, costMult:1.60,
+    apply:(lvl)=> { S.clickPower = 1 * Math.pow(1.03, lvl); } },
+];
+
+function pshopCost(def){
+  const lvl = Number(S.pShop?.[def.id] || 0);
+  return Math.floor(def.baseCost * Math.pow(def.costMult, lvl));
+}
+
+function pshopRecalcAll(){
+  // Resetter til base, så re-apply fra shop levels
+  S._permViewMult = 1 * (S._permViewMult_base || 1);
+  S._permSubMult = 1 * (S._permSubMult_base || 1);
+  S._permMoneyMult = 1 * (S._permMoneyMult_base || 1);
+
+  // clickPower base = 1 (du kan endre base senere)
+  const pclick = Number(S.pShop?.pclick || 0);
+  S.clickPower = 1 * Math.pow(1.03, pclick);
+
+  for(const def of PSHOP_DEFS){
+    const lvl = Number(S.pShop?.[def.id] || 0);
+    if(def.id === "pclick") continue;
+    def.apply(lvl);
+  }
+}
+
+function pshopBuy(id){
+  const def = PSHOP_DEFS.find(x => x.id === id);
+  if(!def) return;
+
+  const p = loadPrestige(); // har sp
+  const cost = pshopCost(def);
+  if(p.sp < cost){ toast("Not enough SP."); return; }
+
+  p.sp -= cost;
+  savePrestige(p);
+
+  S.pShop[id] = Number(S.pShop[id] || 0) + 1;
+  savePShop(S.pShop);
+
+  pshopRecalcAll();
+  buildPrestigeShop();
+  render(true);
+  toast(`${def.name} +1`);
+}
+
+function openPShop(){
+  const o = $("pShopOverlay");
+  if(!o) return;
+  o.classList.add("show");
+  requestAnimationFrame(()=> o.classList.add("open"));
+  buildPrestigeShop();
+}
+function closePShop(){
+  const o = $("pShopOverlay");
+  if(!o) return;
+  o.classList.remove("open");
+  setTimeout(()=> o.classList.remove("show"), 180);
 }
 
 
@@ -2267,11 +2399,6 @@ const UPGRADE_DEFS = [
   return 1 + Math.log10(totalLvl + 1) * 0.25; // juster 0.25 om du vil mer/mindre
 }
 
-function prestigeMult(){
-  // 5% per Prestige Point
-  return 1 + (S.prestigePoints || 0) * 0.05;
-}
-
 
   function calcRates(){
     const lvl = (id) => S.upgrades[id] || 0;
@@ -2299,11 +2426,6 @@ function prestigeMult(){
 vps *= mm;
 sps *= mm;
 mps *= mm;
-
-const pm = prestigeMult();
-vps *= pm;
-sps *= pm;
-mps *= pm;
 
 
     // Prestige multiplier
@@ -2668,6 +2790,61 @@ function buildAchievements(){
     }
   }
 
+  function buildPrestigeShop(){
+  const el = $("pShopList");
+  if(!el) return;
+  el.innerHTML = "";
+
+  const p = loadPrestige();
+  $("pShopSP").textContent = fmt(p.sp || 0);
+
+  for(const def of PSHOP_DEFS){
+    const row = document.createElement("div");
+    row.className = "shop-item";
+
+    const meta = document.createElement("div");
+    meta.className = "meta";
+
+    const name = document.createElement("div");
+    name.className = "name";
+    name.textContent = def.name;
+
+    const note = document.createElement("div");
+    note.className = "note";
+    note.textContent = def.desc;
+
+    meta.appendChild(name);
+    meta.appendChild(note);
+
+    const right = document.createElement("div");
+    right.className = "right";
+
+    const price = document.createElement("div");
+    price.className = "price";
+    price.textContent = `Cost: ${fmt(pshopCost(def))} SP`;
+
+    const lvl = document.createElement("div");
+    lvl.className = "pill";
+    lvl.textContent = `lvl ${Number(S.pShop?.[def.id] || 0)}`;
+
+    const btn = document.createElement("button");
+    btn.className = "btn-primary";
+    btn.textContent = "Buy";
+    btn.disabled = (loadPrestige().sp || 0) < pshopCost(def);
+    btn.onclick = () => pshopBuy(def.id);
+
+    right.appendChild(price);
+    right.appendChild(lvl);
+    right.appendChild(btn);
+
+    row.appendChild(meta);
+    row.appendChild(right);
+
+    el.appendChild(row);
+  }
+}
+
+
   function updateDailyButtonUI(){
     const btn = $("btnDaily");
     if(!btn) return;
@@ -2702,7 +2879,8 @@ $("mps").textContent = `+${formatRate(totalMps)} per second`;
 $("pillRate").textContent =
   `V ${formatRate(r.vps)}/s · S ${formatRate(totalSps)}/s · $ ${formatRate(totalMps)}/s`;
 
-
+const p = loadPrestige();
+$("sp").textContent = fmt(p.sp || 0);
 
 
     // prestige button
@@ -2961,6 +3139,13 @@ function updateAchTabUI(){
   }
 }
 
+$("btnPrestigeShop")?.addEventListener("click", openPShop);
+$("btnClosePShop")?.addEventListener("click", closePShop);
+$("pShopOverlay")?.addEventListener("click", (e) => {
+  if (e.target && e.target.id === "pShopOverlay") closePShop();
+});
+
+
 $("achTabLocked")?.addEventListener("click", () => { ACH_TAB = "locked"; updateAchTabUI(); });
 $("achTabUnlocked")?.addEventListener("click", () => { ACH_TAB = "unlocked"; updateAchTabUI(); });
 
@@ -3110,6 +3295,7 @@ $("statsOverlay")?.addEventListener("click", (e) => {
     closeSeasonOverlay();
     closeLegalOverlay();
     closeStatsOverlay();
+    closePShop();
     
 
   });
@@ -3138,6 +3324,8 @@ $("statsOverlay")?.addEventListener("click", (e) => {
   renderQuests();
   checkAchievements();
   loop();
+  pshopRecalcAll();
+  buildPrestigeShop();
 
   // Show help first time
   if(!localStorage.getItem(HELP_KEY)){
