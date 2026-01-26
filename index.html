@@ -9,6 +9,25 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Streamer Idle Simulator</title>
   <meta name="description" content="A clean, modern incremental game about becoming a streaming legend." />
+  <link rel="canonical" href="https://d1gitor.github.io/" />
+
+<!-- Favicon (legg gjerne inn ikon senere) -->
+<link rel="icon" href="./favicon.ico" />
+
+<!-- Open Graph (for deling på Discord/Facebook) -->
+<meta property="og:type" content="website" />
+<meta property="og:title" content="Streamer Idle Simulator" />
+<meta property="og:description" content="A clean incremental browser game about becoming a streaming legend. Click, upgrade, prestige, and climb weekly leaderboards." />
+<meta property="og:url" content="https://d1gitor.github.io/" />
+<meta property="og:image" content="https://d1gitor.github.io/og.png" />
+<meta name="twitter:card" content="summary_large_image" />
+
+<!-- Robots -->
+<meta name="robots" content="index,follow" />
+
+<!-- Performance hint -->
+<link rel="preconnect" href="https://oqgrbukmdzcdtszxcnqr.supabase.co" />
+
   <style>
     :root{
       --bg1:#0b1020;
@@ -434,6 +453,32 @@
   </div>
 </div>
 
+<div class="card" style="margin-bottom:14px;">
+  <div class="section-title">
+    <h2>How to play</h2>
+    <div class="pill">Quick guide</div>
+  </div>
+
+  <div style="color:rgba(234,240,255,.75); font-size:13px; line-height:1.55; display:grid; gap:10px;">
+    <div>
+      <strong>1) Go live</strong><br/>
+      Click to get a burst of views, subs and money.
+    </div>
+    <div>
+      <strong>2) Buy upgrades</strong><br/>
+      Upgrades increase your income per second. The goal is to make progress even while idle.
+    </div>
+    <div>
+      <strong>3) Prestige + Quests</strong><br/>
+      Prestige resets your run for permanent progress (SP). Daily quests give extra rewards.
+    </div>
+    <div style="color:rgba(234,240,255,.60); font-size:12px;">
+      Progress is saved locally in your browser.
+    </div>
+  </div>
+</div>
+
+
     <div class="grid">
 
       <!-- LEFT -->
@@ -546,7 +591,7 @@
       </div>
     </div>
 
-    <button id="btnHowAds" style="border-radius:14px; padding:10px 12px;">
+    <button id="Info" style="border-radius:14px; padding:10px 12px;">
       Info
     </button>
   </div>
@@ -598,12 +643,12 @@
       <span style="color:rgba(234,240,255,.55);">A simple incremental web game. Saved locally in your browser.</span>
     </div>
 
-    <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;">
-<a href="./about.html"><button style="border-radius:14px;">About</button></a>
-<a href="./privacy.html"><button style="border-radius:14px;">Privacy</button></a>
-<a href="./terms.html"><button style="border-radius:14px;">Terms</button></a>
-<a href="./contact.html"><button style="border-radius:14px;">Contact</button></a>
-<a href="./updates.html"><button style="border-radius:14px;">Updates</button></a>
+<div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;">
+  <a href="./about.html"><button style="border-radius:14px;">About</button></a>
+  <a href="./privacy.html"><button style="border-radius:14px;">Privacy</button></a>
+  <a href="./terms.html"><button style="border-radius:14px;">Terms</button></a>
+  <a href="./contact.html"><button style="border-radius:14px;">Contact</button></a>
+  <a href="./updates.html"><button style="border-radius:14px;">Updates</button></a>
 
     </div>
   </div>
@@ -659,7 +704,7 @@
   <div id="adsOverlay" class="modal-overlay">
     <div class="modal-card">
       <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:10px;">
-        <div style="font-weight:900; font-size:16px;">Monetization (later)</div>
+        <div style="font-weight:900; font-size:16px;">Info</div>
         <button id="btnCloseAds" class="btn-bad" style="padding:8px 10px;">✕</button>
       </div>
 
@@ -3276,7 +3321,7 @@ $("btnLegalContact")?.addEventListener("click", () => window.location.href = "co
 
   $("btnReward")?.addEventListener("click", rewardBoost);
 
-  $("btnHowAds")?.addEventListener("click", openAdsOverlay);
+  $("Info")?.addEventListener("click", openAdsOverlay);
   $("btnCloseAds")?.addEventListener("click", closeAdsOverlay);
   $("adsOverlay")?.addEventListener("click", (e) => {
     if (e.target && e.target.id === "adsOverlay") closeAdsOverlay();
