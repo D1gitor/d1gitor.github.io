@@ -4,15 +4,53 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>About — Streamer Idle Simulator</title>
-  <meta name="robots" content="index,follow" />
+  <meta name="description" content="About Streamer Idle Simulator and how the game works." />
+  <style>
+    :root{--bg1:#0b1020;--bg2:#090b16;--card:#0f1733cc;--card2:#0f1733aa;--text:#eaf0ff;--muted:#a8b3d6;--accent:#7aa7ff;--accent2:#a97cff;--shadow:0 18px 50px rgba(0,0,0,.35);--radius:18px}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;color:var(--text);min-height:100vh;background:
+      radial-gradient(900px 500px at 20% 10%, rgba(122,167,255,.22), transparent 60%),
+      radial-gradient(900px 500px at 80% 20%, rgba(169,124,255,.18), transparent 60%),
+      radial-gradient(700px 450px at 50% 85%, rgba(124,255,178,.10), transparent 60%),
+      linear-gradient(180deg,var(--bg1),var(--bg2));}
+    .wrap{max-width:900px;margin:0 auto;padding:22px 18px 40px}
+    .card{background:linear-gradient(180deg,var(--card),var(--card2));border:1px solid rgba(255,255,255,.10);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px}
+    a{color:var(--accent);text-decoration:none} a:hover{text-decoration:underline}
+    .top{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+    .btn{display:inline-block;padding:10px 12px;border-radius:14px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.08);color:var(--text);font-weight:700}
+    h1{margin:0;font-size:18px;letter-spacing:.2px}
+    p{color:rgba(234,240,255,.78);line-height:1.6}
+    li{color:rgba(234,240,255,.75);line-height:1.6}
+  </style>
 </head>
-<body style="font-family:system-ui;max-width:900px;margin:40px auto;padding:0 16px;line-height:1.6;">
-  <h1>About</h1>
-  <p><strong>Streamer Idle Simulator</strong> is a lightweight browser-based incremental game.</p>
-  <p>Your progress is saved locally in your browser.</p>
-  <p>Made as an indie prototype. More features may be added over time.</p>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <h1>About — Streamer Idle Simulator</h1>
+      <a class="btn" href="./index.html">← Back to game</a>
+    </div>
 
-  <h2>Contact</h2>
-  <p>Email: <a href="mailto:YOUR_EMAIL_HERE">d1gitorsponsorship@gmail.com</a></p>
+    <div class="card">
+      <p><strong>Streamer Idle Simulator</strong> is a small browser-based incremental game where you grow views, subs, and money over time.</p>
+
+      <p><strong>How it works:</strong></p>
+      <ul>
+        <li>Click <strong>Go live</strong> to gain a burst of resources.</li>
+        <li>Buy upgrades to increase your passive income per second.</li>
+        <li>Complete quests, unlock achievements, and progress through seasons.</li>
+        <li>Your progress is saved locally in your browser.</li>
+      </ul>
+
+      <p><strong>Progress saving:</strong> The game stores save data in your browser using <code>localStorage</code>. This means progress is saved on your device and can be cleared by using Reset or clearing site data.</p>
+
+      <p><strong>Leaderboards:</strong> If you submit a score, the only information sent is the nickname you enter and your score/time.</p>
+
+      <p>Last updated: <span id="updated"></span></p>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById("updated").textContent = new Date().toISOString().slice(0,10);
+  </script>
 </body>
 </html>
