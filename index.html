@@ -2503,7 +2503,7 @@ const UPGRADE_DEFS = [
     desc:"More views per second. (Your sound gets better)",
     baseCost:45,
     costMult:1.25,
-    effect:(lvl)=>({ mps: 0.16 * lvl, vps: 1.00 * Math.pow(lvl, 1.14) })
+    effect:(lvl)=>({ mps: 0.16 * lvl, vps: 1.55 * Math.pow(lvl, 1.14) })
   },
   {
     id:"pc",
@@ -2511,7 +2511,7 @@ const UPGRADE_DEFS = [
     desc:"More views per second. (GPU goes BRRR)",
     baseCost:50,
     costMult:1.25,
-    effect:(lvl)=>({ vps: 0.75 * Math.pow(lvl, 1.17) })
+    effect:(lvl)=>({ vps: 1.75 * Math.pow(lvl, 1.17) })
   },
   {
     id:"overlay",
@@ -2523,7 +2523,7 @@ const UPGRADE_DEFS = [
       // NOTE: click håndteres i click() hos deg, men dette er ok å la stå
       click: 0.4 * lvl,
       // liten passiv views bonus også
-      vps: 0.32 * lvl
+      vps: 1.32 * lvl
     })
   },
     // SUPPORT upgrades (gir litt views også)
@@ -2534,8 +2534,8 @@ const UPGRADE_DEFS = [
     baseCost:120,
     costMult:1.28,
     effect:(lvl)=>({
-      sps: 0.07 * lvl,
-      vps: 0.45 * lvl
+      sps: 0.03 * lvl,
+      vps: 1.45 * lvl
     })
   },
   {
@@ -2547,7 +2547,7 @@ const UPGRADE_DEFS = [
     effect:(lvl)=>({
       mps: 0.55 * lvl,
       // litt views fordi streamen flyter bedre
-      vps: 0.60 * lvl
+      vps: 1.60 * lvl
     })
   },
 
@@ -2575,7 +2575,7 @@ const UPGRADE_DEFS = [
       // liten men merkbar views bonus
       vps: 0.70 * lvl,
       // viktig: konvertering
-      viewToSubs: 0.0022 * lvl
+      viewToSubs: 0.0012 * lvl
     })
   },
 ];
@@ -3645,6 +3645,7 @@ $("statsOverlay")?.addEventListener("click", (e) => {
 </script>
 </body>
 </html>
+
 
 
 
