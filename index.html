@@ -2534,8 +2534,8 @@ const UPGRADE_DEFS = [
     baseCost:120,
     costMult:1.28,
     effect:(lvl)=>({
-      sps: 0.03 * lvl,
-      vps: 1.45 * lvl
+      sps: 0.012 * lvl,
+      vps: 1.80 * lvl
     })
   },
   {
@@ -2575,7 +2575,7 @@ const UPGRADE_DEFS = [
       // liten men merkbar views bonus
       vps: 0.70 * lvl,
       // viktig: konvertering
-      viewToSubs: 0.0012 * lvl
+      viewToSubs: 0.00005 * lvl
     })
   },
 ];
@@ -3645,7 +3645,6 @@ $("statsOverlay")?.addEventListener("click", (e) => {
 </script>
 </body>
 </html>
-
 
 
 
