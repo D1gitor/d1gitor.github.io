@@ -3118,54 +3118,99 @@ if(canPrestige()){
   }
 
   function setLegalContent(kind){
-    const t = $("legalTitle");
-    const b = $("legalBody");
-    if(!t || !b) return;
+  const t = $("legalTitle");
+  const b = $("legalBody");
+  if(!t || !b) return;
 
-    if(kind === "about"){
-      t.textContent = "About";
-      b.innerHTML = `
-        <p><strong>Streamer Idle Simulator</strong> is a lightweight incremental game you can play in the browser.</p>
-        <p>Your progress (views, upgrades, streaks) is saved locally using <strong>localStorage</strong> on your device.</p>
-        <p>This is an indie prototype. More features may be added over time.</p>
-      `;
-      return;
-    }
+  const effective = "2026-01-26"; // ← oppdater dato når du endrer tekst senere
+  const siteName = "Streamer Idle Simulator";
+  const siteUrl = "https://d1gitor.github.io/";
+  const contactEmail = "YOUR_EMAIL_HERE"; // ← BYTT til din e-post
 
-    if(kind === "privacy"){
-      t.textContent = "Privacy Policy";
-      b.innerHTML = `
-        <p><strong>What we store:</strong> This game saves your progress locally in your browser (localStorage). This includes game stats and settings.</p>
-        <p><strong>Cookies:</strong> The game itself does not require cookies to function. If ads are enabled, advertising partners may use cookies or similar technologies.</p>
-        <p><strong>Data sharing:</strong> We do not sell your personal data. Leaderboard submissions include only the nickname you enter and your score/time.</p>
-        <p><strong>Contact:</strong> Use the Contact section for questions.</p>
-      `;
-      return;
-    }
-
-    if(kind === "terms"){
-      t.textContent = "Terms";
-      b.innerHTML = `
-        <p>By using this site, you agree to play at your own risk. The game is provided “as is”.</p>
-        <p><strong>Leaderboard:</strong> Do not submit offensive names. Scores may be moderated or removed.</p>
-        <p><strong>No guarantees:</strong> We may change or remove features at any time.</p>
-      `;
-      return;
-    }
-
-    if(kind === "contact"){
-      t.textContent = "Contact";
-      b.innerHTML = `
-        <p>If you need help, have feedback, or want to report a bug:</p>
-        <p><strong>GitHub:</strong> Use the repository Issues page (recommended).</p>
-        <p style="color:rgba(234,240,255,.55); font-size:12px;">Tip: Add a README + Issues for better trust during AdSense review.</p>
-      `;
-      return;
-    }
-
-    t.textContent = "Info";
-    b.textContent = "";
+  if(kind === "about"){
+    t.textContent = "About";
+    b.innerHTML = `
+      <p><strong>${siteName}</strong> is a free browser-based idle / incremental game where you grow views, subs, and money over time.</p>
+      <p>The game runs entirely in your browser. There are no downloads and no account required.</p>
+      <p><strong>How progress works:</strong> Your progress is stored locally on your device using browser storage (localStorage). If you clear browser data, your save may be lost.</p>
+      <p style="color:rgba(234,240,255,.55); font-size:12px; margin-top:10px;">
+        Site: <a href="${siteUrl}" target="_blank" rel="noopener">${siteUrl}</a><br/>
+        Effective date: ${effective}
+      </p>
+    `;
+    return;
   }
+
+  if(kind === "privacy"){
+    t.textContent = "Privacy Policy";
+    b.innerHTML = `
+      <p><strong>Effective date:</strong> ${effective}</p>
+
+      <p><strong>1) What we store on your device</strong><br/>
+      This site saves game progress locally in your browser using <strong>localStorage</strong>. This can include:
+      views, subs, money, upgrades, achievements, streaks, and settings.</p>
+
+      <p><strong>2) Leaderboard submissions</strong><br/>
+      If you submit to the leaderboard, we send the following to the leaderboard server:
+      <ul>
+        <li>Nickname you enter</li>
+        <li>Your score or time (depending on leaderboard type)</li>
+        <li>Weekly/all-time mode selection</li>
+      </ul>
+      We do not require an account and we do not ask for your real name.</p>
+
+      <p><strong>3) Cookies / advertising</strong><br/>
+      The game itself does not require cookies to function. If advertising is enabled in the future (e.g. Google AdSense),
+      advertising partners may use cookies or similar technologies to measure performance and show relevant ads.</p>
+
+      <p><strong>4) Data selling</strong><br/>
+      We do not sell your personal data.</p>
+
+      <p><strong>5) Contact</strong><br/>
+      Questions or requests: <a href="mailto:${contactEmail}">${contactEmail}</a></p>
+    `;
+    return;
+  }
+
+  if(kind === "terms"){
+    t.textContent = "Terms of Use";
+    b.innerHTML = `
+      <p><strong>Effective date:</strong> ${effective}</p>
+
+      <p><strong>1) “As is”</strong><br/>
+      This game is provided “as is”, without warranties. You use it at your own risk.</p>
+
+      <p><strong>2) Fair use</strong><br/>
+      Please do not abuse the site or attempt to break the game/leaderboards. We may block obvious cheating or remove invalid scores.</p>
+
+      <p><strong>3) Names on leaderboard</strong><br/>
+      Do not submit offensive, hateful, or sexual names. Scores may be removed if they violate these rules.</p>
+
+      <p><strong>4) Changes</strong><br/>
+      Features, balance, and content may change over time without notice.</p>
+
+      <p><strong>5) Contact</strong><br/>
+      <a href="mailto:${contactEmail}">${contactEmail}</a></p>
+    `;
+    return;
+  }
+
+  if(kind === "contact"){
+    t.textContent = "Contact";
+    b.innerHTML = `
+      <p><strong>Support / feedback</strong></p>
+      <p>Email: <a href="mailto:${contactEmail}">${contactEmail}</a></p>
+      <p style="color:rgba(234,240,255,.65); font-size:12px;">
+        If you report a bug, include your browser (Chrome/Firefox/Safari), device (PC/Mobile), and what you clicked before the issue.
+      </p>
+    `;
+    return;
+  }
+
+  t.textContent = "Info";
+  b.textContent = "";
+}
+
 
 
   // ---------- Ads modal ----------
