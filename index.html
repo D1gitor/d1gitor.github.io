@@ -608,13 +608,22 @@
 
       <!-- RIGHT -->
       <div class="two-col">
-        <div class="card">
-          <div class="section-title">
-            <h2>Shop</h2>
-            <div class="pill">Upgrade → more per second</div>
-          </div>
-          <div class="shop" id="shop"></div>
-        </div>
+<div class="card">
+  <div class="section-title">
+    <h2>Shop</h2>
+    <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; justify-content:flex-end;">
+      <div class="pill">Buy:</div>
+      <button class="buyMode btn-primary" data-mode="1">1x</button>
+      <button class="buyMode" data-mode="5">5x</button>
+      <button class="buyMode" data-mode="10">10x</button>
+      <button class="buyMode" data-mode="max">Max</button>
+    </div>
+  </div>
+
+  <div class="shop" id="shop"></div>
+</div>
+
+
 
 <div class="card">
   <div class="section-title">
@@ -966,10 +975,20 @@
       <button id="btnClosePShop" class="btn-bad" style="padding:8px 10px;">✕</button>
     </div>
 
-    <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:12px;">
-      <div class="pill">SP: <strong id="pShopSP">0</strong></div>
-      <div style="color:rgba(234,240,255,.65); font-size:12px;">Spend SP on permanent bonuses.</div>
-    </div>
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:12px; flex-wrap:wrap;">
+  <div class="pill">SP: <strong id="pShopSP">0</strong></div>
+
+  <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; justify-content:flex-end;">
+    <div class="pill">Buy:</div>
+    <button class="pBuyMode btn-primary" data-mode="1">1x</button>
+    <button class="pBuyMode" data-mode="5">5x</button>
+    <button class="pBuyMode" data-mode="10">10x</button>
+    <button class="pBuyMode" data-mode="max">Max</button>
+  </div>
+
+  <div style="color:rgba(234,240,255,.65); font-size:12px; flex-basis:100%;">Spend SP on permanent bonuses.</div>
+</div>
+
 
     <div class="shop" id="pShopList"></div>
 
@@ -2380,6 +2399,100 @@ if(pill) pill.textContent = `${claimedCount} / ${DAILY_QUESTS.length}`;
 
 }
 
+// ---------- Buy mode (Shop + Prestige Shop) ----------
+let BUY_MODE = "1";      // "1" | "5" | "10" | "max"
+let PBUY_MODE = "1";     // for prestige shop
+
+function setBuyMode(mode){
+  BUY_MODE = String(mode);
+  document.querySelectorAll(".buyMode").forEach(b=>{
+    b.classList.toggle("btn-primary", b.dataset.mode === BUY_MODE);
+  });
+  // refresh shop button states
+  render(true);
+}
+
+function setPBuyMode(mode){
+  PBUY_MODE = String(mode);
+  document.querySelectorAll(".pBuyMode").forEach(b=>{
+    b.classList.toggle("btn-primary", b.dataset.mode === PBUY_MODE);
+  });
+  buildPrestigeShop();
+}
+
+// exact multi-buy (loop, matches your per-level floor pricing)
+function buyUpgradeMulti(id, amount){
+  const def = UPGRADE_DEFS.find(u=>u.id===id);
+  if(!def) return;
+
+  let bought = 0;
+
+  const wantMax = (amount === "max");
+  const target = wantMax ? 999999 : Number(amount || 1);
+
+  while(bought < target){
+    const cost = upgradeCost(def); // uses current level => correct
+    if(!canAfford(cost)) break;
+
+    S.money -= cost;
+    S.upgrades[id] = (S.upgrades[id] || 0) + 1;
+    bought++;
+  }
+
+  if(bought > 0){
+    questEvent("buy", bought);
+    toast(`${def.name} +${bought}`);
+    log(`🛒 Bought <strong>${def.name}</strong> +${bought} (lvl ${S.upgrades[id]})`);
+    render(true);
+  }else{
+    toast("Not enough money.");
+  }
+}
+
+// prestige shop multi-buy
+function pshopBuyMulti(id, amount){
+  const def = PSHOP_DEFS.find(x => x.id === id);
+  if(!def) return;
+
+  const wantMax = (amount === "max");
+  const target = wantMax ? 999999 : Number(amount || 1);
+
+  let bought = 0;
+  let p = loadPrestige();
+
+  while(bought < target){
+    const cost = pshopCost(def);
+    if((p.sp || 0) < cost) break;
+
+    p.sp -= cost;
+    S.pShop[id] = Number(S.pShop[id] || 0) + 1;
+    bought++;
+  }
+
+  if(bought > 0){
+    savePrestige(p);
+    savePShop(S.pShop);
+
+    pshopRecalcAll();
+    buildPrestigeShop();
+    render(true);
+    toast(`${def.name} +${bought}`);
+  }else{
+    toast("Not enough SP.");
+  }
+}
+
+// wire up buy mode buttons
+function wireBuyModeButtons(){
+  document.querySelectorAll(".buyMode").forEach(btn=>{
+    btn.addEventListener("click", ()=> setBuyMode(btn.dataset.mode));
+  });
+  document.querySelectorAll(".pBuyMode").forEach(btn=>{
+    btn.addEventListener("click", ()=> setPBuyMode(btn.dataset.mode));
+  });
+}
+
+
 
 // ---------- Game content ----------
 const UPGRADE_DEFS = [
@@ -2911,7 +3024,7 @@ function buildAchievements(){
       const btn = document.createElement("button");
       btn.textContent = "Buy";
       btn.className = "btn-primary";
-      btn.onclick = () => buyUpgrade(def.id);
+      btn.onclick = () => buyUpgradeMulti(def.id, BUY_MODE);
 
       right.appendChild(price);
       right.appendChild(lvl);
@@ -2965,7 +3078,7 @@ function buildAchievements(){
     btn.className = "btn-primary";
     btn.textContent = "Buy";
     btn.disabled = (loadPrestige().sp || 0) < pshopCost(def);
-    btn.onclick = () => pshopBuy(def.id);
+    btn.onclick = () => pshopBuyMulti(def.id, PBUY_MODE);
 
     right.appendChild(price);
     right.appendChild(lvl);
@@ -3515,6 +3628,7 @@ $("statsOverlay")?.addEventListener("click", (e) => {
   render(true);
   renderQuests();
   checkAchievements();
+  wireBuyModeButtons();
   loop();
 
   // Show help first time
