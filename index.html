@@ -3036,7 +3036,15 @@ function buyUpgrade(id){
   if(!def) return;
 
   const startLevel = S.upgrades[id] || 0;
-  const count = plannedBuys(def);
+
+  // hvor mange du ønsker å kjøpe
+  const wanted = plannedBuys(def);
+
+  // hvor mange du faktisk har råd til
+  const maxBuys = maxAffordableBuys(def);
+
+  // clamp (så 5x blir f.eks 2x hvis du bare har råd til 2)
+  const count = (wanted === "max") ? maxBuys : Math.min(Number(wanted || 1), maxBuys);
 
   if(count <= 0){
     toast("Not enough money.");
@@ -3056,8 +3064,9 @@ function buyUpgrade(id){
 
   toast(`${def.name} +${count}`);
   log(`🛒 Bought <strong>${def.name}</strong> (+${count}, lvl ${S.upgrades[id]})`);
-  render();
+  render(true);
 }
+
 
 
   function click(){
