@@ -767,6 +767,9 @@
           <div style="font-weight:900; font-size:16px;">🏆 Leaderboard</div>
           <button id="btnLBAllTime" class="btn-primary" style="padding:7px 10px; border-radius:999px;">All-time</button>
           <button id="btnLBWeekly" style="padding:7px 10px; border-radius:999px;">Weekly</button>
+          <button id="btnLBFresh" style="padding:7px 10px; border-radius:999px;">Fresh</button>
+          <button id="btnLBPrestigeBracket" class="btn-primary" style="padding:7px 10px; border-radius:999px;">Prestige</button>
+
         </div>
         <button id="btnCloseLB" class="btn-bad" style="padding:8px 10px;">✕</button>
       </div>
@@ -1370,16 +1373,56 @@ S._startBonusRunIdApplied = Number(S._startBonusRunIdApplied || -1);
     }
   }
 
-  function hardReset(){
-    localStorage.removeItem(STORAGE_KEY);
-    S = structuredClone(DEFAULT);
-    window.S = S;
-    buildShop();
-    buildAchievements();
-    render(true);
-    toast("Reset done.");
-    log("🔁 <strong>Reset</strong> — back to zero. Let’s rebuild.");
-  }
+function hardReset(){
+  // main save
+  localStorage.removeItem(STORAGE_KEY);
+
+  // prestige + prestige shop
+  localStorage.removeItem(PRESTIGE_KEY);
+  localStorage.removeItem(PSHOP_KEY);
+
+  // leaderboard name + cooldown
+  localStorage.removeItem(LB_NAME_KEY);
+  localStorage.removeItem(LB_CD_KEY);
+
+  // daily streak + comeback
+  localStorage.removeItem(STREAK_KEY);
+  localStorage.removeItem(STREAK_LAST_KEY);
+  localStorage.removeItem(COMEBACK_LAST_SEEN);
+  localStorage.removeItem(COMEBACK_CLAIM_KEY);
+
+  // quests
+  localStorage.removeItem(QUEST_KEY);
+  localStorage.removeItem(QUEST_DAY_KEY);
+  localStorage.removeItem(Q_KEY);
+
+  // weekly history
+  localStorage.removeItem(WEEKLY_HISTORY_KEY);
+
+  // optional: starter/help flags (hvis du vil full reset)
+  localStorage.removeItem(HELP_KEY);
+  localStorage.removeItem(START_BONUS_KEY);
+
+  // reset memory object
+  S = structuredClone(DEFAULT);
+  window.S = S;
+
+  // reload pshop state fresh
+  S.pShop = {};
+
+  buildShop();
+  buildAchievements();
+  pshopRecalcAll();
+  buildPrestigeShop();
+  renderQuests();
+  updateSPUI();
+  render(true);
+
+  toast("Reset done.");
+  log("🔁 <strong>Reset</strong> — back to zero. Let’s rebuild.");
+}
+
+
 
   // ---------- Starter bonus ----------
   function giveStartBonus(){
@@ -1916,6 +1959,7 @@ function closePShop(){
   const LB_BASE = "https://oqgrbukmdzcdtszxcnqr.supabase.co/functions/v1";
   const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9xZ3JidWttZHpjZHRzenhjbnFyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg2NzUxNTIsImV4cCI6MjA4NDI1MTE1Mn0.WjO-b4GwOCwTSbD-b0Rcvau9vdb2HuBTpuuAIXVm-wc";
   let LB_WEEKLY_MODE = false; // false=all-time, true=weekly
+  let LB_BRACKET = "prestige"; // "fresh" | "prestige"
 
   async function promptName(){
     const saved = localStorage.getItem(LB_NAME_KEY) || "";
@@ -1927,45 +1971,96 @@ function closePShop(){
     return cleaned;
   }
 
-  async function lbGet(type){
-    const weekly = LB_WEEKLY_MODE ? "&weekly=1" : "";
-    const res = await fetch(`${LB_BASE}/get-leaderboard?type=${encodeURIComponent(type)}${weekly}`, {
-      headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` }
-    });
-    const json = await res.json();
-    if(!json.ok) throw new Error(json.error || "LB error");
-    return json.data || [];
-  }
+async function lbGet(type){
+  const weekly = LB_WEEKLY_MODE ? "&weekly=1" : "";
+
+  // ✅ views bruker range-bracket (p0-100 osv)
+  const bracketParam = (type === "views")
+    ? `&bracket=${encodeURIComponent(currentViewsBracket())}`
+    : "";
+
+  const url = `${LB_BASE}/get-leaderboard?type=${encodeURIComponent(type)}${weekly}${bracketParam}`;
+  console.log("[lbGet]", url); // debug
+
+  const res = await fetch(url, {
+    headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` }
+  });
+
+  const json = await res.json();
+  if(!json.ok) throw new Error(json.error || "LB error");
+  return json.data || [];
+}
+
+
+
+
+
+
 
   async function lbSubmit(type, payload){
-    const res = await fetch(`${LB_BASE}/submit-score`, {
-      method: "POST",
-      headers: {
-        "Content-Type":"application/json",
-        apikey: SUPABASE_ANON_KEY,
-        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-      },
-      body: JSON.stringify({ type, ...payload }),
-    });
-    const json = await res.json();
-    if(!res.ok || !json.ok) throw new Error(json.error || `HTTP ${res.status}`);
-    return true;
-  }
+  const bracket = (type === "views") ? currentViewsBracket() : null;
+
+  const res = await fetch(`${LB_BASE}/submit-score`, {
+    method: "POST",
+    headers: {
+      "Content-Type":"application/json",
+      apikey: SUPABASE_ANON_KEY,
+      Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+    },
+    body: JSON.stringify({ type, ...(bracket ? { bracket } : {}), ...payload }),
+  });
+
+  const json = await res.json();
+  if(!res.ok || !json.ok) throw new Error(json.error || `HTTP ${res.status}`);
+  return true;
+}
+
+
 
   async function lbGetRank(type, name){
-    const res = await fetch(`${LB_BASE}/get-rank`, {
-      method: "POST",
-      headers: {
-        "Content-Type":"application/json",
-        apikey: SUPABASE_ANON_KEY,
-        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-      },
-      body: JSON.stringify({ type, name, weekly: LB_WEEKLY_MODE }),
-    });
-    const json = await res.json();
-    if(!res.ok || !json.ok) throw new Error(json.error || `HTTP ${res.status}`);
-    return json;
+  const res = await fetch(`${LB_BASE}/get-rank`, {
+    method: "POST",
+    headers: {
+      "Content-Type":"application/json",
+      apikey: SUPABASE_ANON_KEY,
+      Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+    },
+    body: JSON.stringify({
+  type,
+  name,
+  weekly: LB_WEEKLY_MODE,
+  ...(type === "views" ? { bracket: currentViewsBracket() } : {})
+}),
+
+  });
+  const json = await res.json();
+  if(!res.ok || !json.ok) throw new Error(json.error || `HTTP ${res.status}`);
+  return json;
+}
+function currentBracket(){
+  const p = loadPrestige();
+  return (Number(p.totalPrestiges || 0) > 0) ? "prestige" : "fresh";
+}
+
+
+function isFreshPlayer(){
+  const p = loadPrestige();
+  return Number(p.totalPrestiges || 0) === 0;
+}
+
+function bracketAllowed(){
+  if(LB_BRACKET === "fresh" && !isFreshPlayer()){
+    toast("Fresh leaderboard is only for players with 0 prestiges.");
+    return false;
   }
+  if(LB_BRACKET === "prestige" && isFreshPlayer()){
+    toast("Prestige leaderboard is for players who have prestiged at least once.");
+    return false;
+  }
+  return true;
+}
+
+
 
   function lbSetCooldown(){
     localStorage.setItem(LB_CD_KEY, String(now()));
@@ -2120,7 +2215,11 @@ function closePShop(){
   async function submitViews(){
     const name = await promptName();
     if(!name) return;
-    await lbSubmit("views", { name, score: Math.floor(S.views || 0) });
+    await lbSubmit("views", {
+  name,
+  score: Math.floor(S.views || 0)
+});
+
     toast("Submitted to Views leaderboard ✅");
   }
   async function submitPrestige(){
@@ -3538,6 +3637,25 @@ $("price_"+def.id).textContent =
     setTimeout(() => o.classList.remove("show"), 180);
   }
 
+
+  function prestigeBracket(totalPrestige) {
+  if (totalPrestige <= 100) return "p0-100";
+  if (totalPrestige <= 500) return "p101-500";
+  if (totalPrestige <= 1000) return "p501-1000";
+  if (totalPrestige <= 2000) return "p1001-2000";
+  if (totalPrestige <= 3000) return "p2001-3000";
+  if (totalPrestige <= 4500) return "p3001-4500";
+  if (totalPrestige <= 5000) return "p4501-5000";
+  if (totalPrestige <= 10000) return "p5001-10000";
+  if (totalPrestige <= 20000) return "p10001-20000";
+  return "p20001+";
+}
+function currentViewsBracket(){
+  return LB_BRACKET; // "fresh" eller "prestige"
+}
+
+
+
   // ---------- Leaderboard modal ----------
   function openLBOverlay(){
     const o = $("lbOverlay");
@@ -3550,6 +3668,7 @@ $("price_"+def.id).textContent =
     setRankLine("prestige", "");
     setRankLine("speedrun", "");
     updateLBModeButtons();
+    updateLBBracketButtons();
   }
   function closeLBOverlay(){
     lbStopCooldownTicker();
@@ -3641,6 +3760,34 @@ function updateAchTabUI(){
     bLocked.classList.remove("btn-primary");
   }
 }
+
+function updateLBBracketButtons(){
+  const f = $("btnLBFresh");
+  const p = $("btnLBPrestigeBracket");
+  if(!f || !p) return;
+
+  if(LB_BRACKET === "fresh"){
+    f.classList.add("btn-primary");
+    p.classList.remove("btn-primary");
+  }else{
+    p.classList.add("btn-primary");
+    f.classList.remove("btn-primary");
+  }
+}
+
+$("btnLBFresh")?.addEventListener("click", () => {
+  LB_BRACKET = "fresh";
+  toast("Leaderboard: Fresh");
+  updateLBBracketButtons();
+  // (valgfritt) lukk åpne top-lister, nullstill rank-linjer
+});
+
+$("btnLBPrestigeBracket")?.addEventListener("click", () => {
+  LB_BRACKET = "prestige";
+  toast("Leaderboard: Prestige");
+  updateLBBracketButtons();
+});
+
 
 $("btnPrestigeShop")?.addEventListener("click", openPShop);
 $("btnClosePShop")?.addEventListener("click", closePShop);
@@ -3742,6 +3889,7 @@ $("btnLegalContact")?.addEventListener("click", () => window.location.href = "co
 
   $("btnLBSubmitViews")?.addEventListener("click", async () => {
     if(!lbCanSend()){ toast("Wait a bit before submitting again 🙂"); return; }
+    if(!bracketAllowed()) return;
     try{
       await submitViews();
       markSubmittedThisWeek();
@@ -3753,6 +3901,7 @@ $("btnLegalContact")?.addEventListener("click", () => window.location.href = "co
   });
   $("btnLBSubmitPrestige")?.addEventListener("click", async () => {
     if(!lbCanSend()){ toast("Wait a bit before submitting again 🙂"); return; }
+    if(!bracketAllowed()) return;
     try{
       await submitPrestige();
       markSubmittedThisWeek();
@@ -3773,6 +3922,7 @@ $("statsOverlay")?.addEventListener("click", (e) => {
 
   $("btnLBSubmitSpeedrun")?.addEventListener("click", async () => {
     if(!lbCanSend()){ toast("Wait a bit before submitting again 🙂"); return; }
+    if(!bracketAllowed()) return;
     try{
       await submitSpeedrun();
       markSubmittedThisWeek();
