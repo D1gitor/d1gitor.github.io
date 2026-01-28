@@ -2647,9 +2647,9 @@ const UPGRADE_DEFS = [
   baseCost:45,
   costMult:1.25,
   effect:(lvl)=>({
-    vps: 1.6 * Math.pow(lvl, 1.15),
+    vps: 2.6 * Math.pow(lvl, 1.66),
     // veldig liten subs bonus
-    sps: 0.015 * lvl
+    sps: 0.011 * lvl
   })
   },
   {
@@ -2659,7 +2659,7 @@ const UPGRADE_DEFS = [
   baseCost:50,
   costMult:1.25,
   effect:(lvl)=>({
-    vps: 2.0 * Math.pow(lvl, 1.18)
+    vps: 1.0 * Math.pow(lvl, 1.68)
   })
   },
   {
@@ -2684,7 +2684,7 @@ const UPGRADE_DEFS = [
   costMult:1.28,
   effect:(lvl)=>({
     sps: 0.02 * lvl,
-    vps: 1.2 * lvl
+    vps: 2.2 * lvl
   })
   },
   {
@@ -2696,7 +2696,7 @@ const UPGRADE_DEFS = [
     effect:(lvl)=>({
       mps: 0.55 * lvl,
       // litt views fordi streamen flyter bedre
-      vps: 1.60 * lvl
+      vps: 3.60 * lvl
     })
   },
 
@@ -2708,7 +2708,7 @@ const UPGRADE_DEFS = [
   baseCost:500,
   costMult:1.32,
   effect:(lvl)=>({
-    vps: 0.6 * lvl,
+    vps: 1.6 * lvl,
     subToMoney: 0.012 * lvl
     })
   },
@@ -2719,8 +2719,8 @@ const UPGRADE_DEFS = [
   baseCost:650,
   costMult:1.34,
   effect:(lvl)=>({
-    vps: 0.8 * lvl,
-    viewToSubs: 0.00008 * lvl   // 🔑 5%
+    vps: 1.8 * lvl,
+    viewToSubs: 0.00004 * lvl   // 🔑 5%
     })
   },
 ];
