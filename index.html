@@ -3339,12 +3339,16 @@ function buildAchievements(){
     price.className = "price";
     const startLevel = Number(S.pShop?.[def.id] || 0);
 const count = pshopPlannedBuys(def);
+const affordable = pshopMaxAffordableBuys(def);
+const wanted = (PBUY_MULT === "max") ? affordable : Number(PBUY_MULT || 1);
+const buyCount = Math.min(wanted, affordable);
 const total = (count > 0) ? pshopTotalCostForBuys(def, startLevel, count) : 0;
 
 price.textContent =
   (PBUY_MULT === "max")
-    ? `Cost: ${fmt(total)} SP (max ${count}x)`
-    : `Cost: ${fmt(total)} SP (${count}x)`;
+    ? `Cost: ${fmt(total)} SP (max ${buyCount}x)`
+    : `Cost: ${fmt(total)} SP (x${buyCount}${buyCount < wanted ? " (max)" : ""})`;
+
 
 
     const lvl = document.createElement("div");
@@ -3354,8 +3358,8 @@ price.textContent =
     const btn = document.createElement("button");
     btn.className = "btn-primary";
     btn.textContent = "Buy";
-    btn.disabled = (count <= 0) || ((loadPrestige().sp || 0) < total);
-    btn.onclick = () => pshopBuyPlanned(def.id);
+    btn.disabled = (buyCount <= 0) || ((loadPrestige().sp || 0) < total);
+    btn.onclick = () => pshopBuyMulti(def.id, buyCount); // eller pshopBuyPlanned med buyCount
 
     right.appendChild(price);
     right.appendChild(lvl);
@@ -3451,16 +3455,17 @@ for (const def of UPGRADE_DEFS){
 
   const total = buyCount > 0 ? totalCostForBuys(def, lvlNow, buyCount) : 0;
 
-  // Kort + pro: "46.3B · x5" eller "46.3B · max 0"
+  // ✅ Vis faktisk antall du har råd til
   const suffix =
     (BUY_MULT === "max")
-      ? `max ${maxBuys}`
-      : `x${(BUY_MULT === "max") ? maxBuys : Number(BUY_MULT || 1)}`;
+      ? `max ${buyCount}`
+      : `x${buyCount}${buyCount < wanted ? " (max)" : ""}`;
 
-$("price_"+def.id).textContent =
-  buyCount > 0
-    ? `${fmtPrice(total)} · ${suffix}`
-    : `${fmtPrice(nextCost)} · max 0`;
+  $("price_"+def.id).textContent =
+    buyCount > 0
+      ? `${fmtPrice(total)} · ${suffix}`
+      : `${fmtPrice(nextCost)} · can't afford`;
+
 
 
   $("lvl_"+def.id).textContent = `lvl ${lvlNow}`;
