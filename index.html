@@ -3012,8 +3012,9 @@ mps *= mm;
     viewToSubs *= boostMult * dailyMult;
 
     // conversion into "per second" at current stats (matches tick math: * (dt/60))
-    const subsFromViewsPerSec  = viewToSubs * (S.views || 0) / 60;
-    const moneyFromSubsPerSec  = subToMoney * (S.subs  || 0) / 60;
+    const subsFromViewsPerSec  = vps * viewToSubs;          // ✅ flow-based
+    const moneyFromSubsPerSec  = subToMoney * (S.subs || 0); // ✅ stock-based
+
 
     return {
       totals: { vps, sps, mps, viewToSubs, subToMoney, subsFromViewsPerSec, moneyFromSubsPerSec },
@@ -3199,8 +3200,8 @@ const gainedSubs  = r.sps * elapsedSec * offM;
 const gainedMoney = r.mps * elapsedSec * offM;
 
 
-const extraSubsFromViews = r.viewToSubs * S.views * (elapsedSec/60) * offM;
-const extraMoneyFromSubs = r.subToMoney * S.subs  * (elapsedSec/60) * offM;
+const extraSubsFromViews = (r.vps * r.viewToSubs) * elapsedSec * offM;
+const extraMoneyFromSubs = (r.subToMoney * (S.subs || 0)) * elapsedSec * offM;
 
 
     S.views += gainedViews;
@@ -3394,8 +3395,8 @@ price.textContent =
 
 const r = calcRates();
 
-const subsFromViewsPerSec  = (r.viewToSubs * (S.views || 0)) / 60;
-const moneyFromSubsPerSec  = (r.subToMoney * (S.subs || 0)) / 60;
+const subsFromViewsPerSec  = (r.vps * r.viewToSubs);
+const moneyFromSubsPerSec  = (r.subToMoney * (S.subs || 0));
 
 
 const totalSps = r.sps + subsFromViewsPerSec;
@@ -3684,17 +3685,24 @@ function currentViewsBracket(){
   }
 
   // ---------- Events loop ----------
-  function tick(dt){
-    const r = calcRates();
-    S.views += r.vps * dt;
-    S.subs  += r.sps * dt;
-    S.money += r.mps * dt;
+function tick(dt){
+  const r = calcRates();
 
-    S.subs += r.viewToSubs * Math.sqrt(S.views || 0) * (dt/60);
-    S.money += r.subToMoney * S.subs  * (dt/60);
+  // base income
+  S.views += r.vps * dt;
+  S.subs  += r.sps * dt;
+  S.money += r.mps * dt;
 
-    checkAchievements();
-  }
+  // ✅ conversions (per second, consistent)
+  const subsFromViews = (r.vps * r.viewToSubs) * dt;     // flow-based
+  S.subs += subsFromViews;
+
+  const moneyFromSubs = (r.subToMoney * (S.subs || 0)) * dt; // stock-based
+  S.money += moneyFromSubs;
+
+  checkAchievements();
+}
+
 
   let lastFrame = now();
   let lastSeenWrite = 0;
